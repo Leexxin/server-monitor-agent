@@ -1,0 +1,18 @@
+#!/sbin/openrc-run
+
+name="SMA Server Monitor Agent"
+description="Lightweight Linux host metrics agent"
+command="/opt/sma/bin/sma"
+command_user="sma:sma"
+command_background="yes"
+pidfile="/run/sma.pid"
+
+if [ -r /opt/sma/config/sma.env ]; then
+    . /opt/sma/config/sma.env
+fi
+command_args="${SMA_OPTS:-}"
+
+depend() {
+    need net
+    after firewall
+}

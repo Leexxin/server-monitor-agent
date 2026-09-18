@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version without the v prefix
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  packages:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.x"
+          cache: true
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="${{ inputs.version }}"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          if [[ "$version" == "0.1.0" ]]; then
+            echo "package_release=2" >> "$GITHUB_OUTPUT"
+          else
+            echo "package_release=1" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install pinned package builder
+        env:
+          GOBIN: ${{ runner.temp }}/bin
+        run: |
+          mkdir -p "$GOBIN"
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.47.0
+          echo "$GOBIN" >> "$GITHUB_PATH"
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build packages
+        env:
+          SMA_REVISION: ${{ github.sha }}
+          SMA_PACKAGE_RELEASE: ${{ steps.version.outputs.package_release }}
+        run: ./scripts/build-packages.sh "${{ steps.version.outputs.version }}"
+
+      - name: Build release bundle
+        run: |
+          tar -C dist/packages -czf "dist/sma_${{ steps.version.outputs.version }}_linux_packages.tar.gz" .
+          sha256sum "dist/sma_${{ steps.version.outputs.version }}_linux_packages.tar.gz" > "dist/sma_${{ steps.version.outputs.version }}_linux_packages.tar.gz.sha256"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v${{ steps.version.outputs.version }}"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --title "SMA $tag" --generate-notes
+          fi
+          gh release upload "$tag" dist/packages/* dist/*.tar.gz dist/*.sha256 --clobber

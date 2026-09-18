@@ -1,0 +1,13 @@
+# macOS / editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Go build and test output
+*.test
+*.out
+coverage.*
+
+# Release artifacts are published through GitHub Releases, not committed.
+dist/
