@@ -87,6 +87,7 @@ sudo ./uninstall.sh --purge
 /opt/sma/
 ├── bin/sma
 ├── config/sma.env
+├── discovery/scripts/common-services.sh
 ├── README.md
 └── docs/
 ```
@@ -171,3 +172,35 @@ sudo install -o sma -g sma -m 0600 /path/to/token /opt/sma/config/token
 ```text
 SMA_OPTS="--listen-address=0.0.0.0:9108 --web.auth-token-file=/opt/sma/config/token"
 ```
+
+## 自动发现配置
+
+自动发现默认启用。安装包提供两个探测器：
+
+- `process`：Agent 内置的进程、监听端口和 OpenSSH SFTP 配置探测。
+- `script:common-services`：位于 `/opt/sma/discovery/scripts/common-services.sh` 的服务管理器探测脚本。
+
+查看当前能力：
+
+```bash
+curl --fail http://127.0.0.1:9108/v1/discovery/capabilities
+```
+
+本机触发一次发现：
+
+```bash
+curl --fail \
+  -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{}' \
+  http://127.0.0.1:9108/v1/discovery/runs
+```
+
+远程触发必须配置 `--web.auth-token-file`。如需把结果自动上报给 CMDB 或资产平台，在 `/opt/sma/config/sma.env` 中添加：
+
+```text
+--discovery.report-url=https://cmdb.example.com/api/v1/sma/discovery
+--discovery.report-token-file=/opt/sma/config/report-token
+```
+
+上报地址由服务器管理员固定配置，外部触发请求不能传入回调地址、脚本路径或命令。详细接口参见 `/opt/sma/docs/discovery-api-integration.md`。

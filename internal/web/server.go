@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -14,21 +15,23 @@ import (
 
 	"sma/internal/buildinfo"
 	"sma/internal/config"
+	"sma/internal/discovery"
 	"sma/internal/metric"
 	"sma/internal/snapshot"
 )
 
 type Server struct {
-	cfg      config.Config
-	snapshot *snapshot.Service
-	build    buildinfo.Info
-	token    string
-	sem      chan struct{}
-	scrapes  atomic.Uint64
-	errors   atomic.Uint64
+	cfg       config.Config
+	snapshot  *snapshot.Service
+	discovery *discovery.Service
+	build     buildinfo.Info
+	token     string
+	sem       chan struct{}
+	scrapes   atomic.Uint64
+	errors    atomic.Uint64
 }
 
-func New(cfg config.Config, service *snapshot.Service, build buildinfo.Info) (*Server, error) {
+func New(cfg config.Config, service *snapshot.Service, discoveryService *discovery.Service, build buildinfo.Info) (*Server, error) {
 	token := ""
 	if cfg.AuthTokenFile != "" {
 		f, err := os.Open(cfg.AuthTokenFile)
@@ -55,7 +58,10 @@ func New(cfg config.Config, service *snapshot.Service, build buildinfo.Info) (*S
 			return nil, errors.New("auth token file is empty")
 		}
 	}
-	return &Server{cfg: cfg, snapshot: service, build: build, token: token, sem: make(chan struct{}, cfg.MaxConcurrentRequests)}, nil
+	return &Server{
+		cfg: cfg, snapshot: service, discovery: discoveryService, build: build, token: token,
+		sem: make(chan struct{}, cfg.MaxConcurrentRequests),
+	}, nil
 }
 
 func (s *Server) Handler() http.Handler {
@@ -65,6 +71,11 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/healthz", s.health)
 	mux.HandleFunc("/readyz", s.ready)
 	mux.HandleFunc("/version", s.version)
+	if s.discovery != nil {
+		mux.HandleFunc("/v1/discovery/capabilities", s.protected(s.discoveryCapabilities))
+		mux.HandleFunc("/v1/discovery/runs", s.protected(s.discoveryRuns))
+		mux.HandleFunc("/v1/discovery/runs/", s.protected(s.discoveryRun))
+	}
 	mux.HandleFunc("/", s.notFound)
 	return s.secure(s.limit(mux))
 }
@@ -137,6 +148,79 @@ func (s *Server) version(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, r, http.StatusOK, s.build)
 }
 
+func (s *Server) discoveryCapabilities(w http.ResponseWriter, r *http.Request) {
+	if !allowRead(w, r) {
+		return
+	}
+	writeJSON(w, r, http.StatusOK, s.discovery.Capabilities())
+}
+
+func (s *Server) discoveryRuns(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet, http.MethodHead:
+		writeJSON(w, r, http.StatusOK, map[string]any{"runs": s.discovery.List()})
+	case http.MethodPost:
+		if s.token == "" && !remoteIsLoopback(r.RemoteAddr) {
+			writeError(w, http.StatusForbidden, "discovery_auth_required", "remote discovery triggers require bearer token authentication")
+			return
+		}
+		var request discovery.TriggerRequest
+		decoder := json.NewDecoder(io.LimitReader(r.Body, 64<<10))
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&request); err != nil && !errors.Is(err, io.EOF) {
+			writeError(w, http.StatusBadRequest, "invalid_request", "request body must be valid discovery JSON")
+			return
+		}
+		var trailing any
+		if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+			writeError(w, http.StatusBadRequest, "invalid_request", "request body must contain exactly one JSON object")
+			return
+		}
+		run, err := s.discovery.Trigger(request)
+		if err != nil {
+			switch {
+			case errors.Is(err, discovery.ErrBusy):
+				writeError(w, http.StatusConflict, "discovery_busy", "a discovery run is already active")
+			case errors.Is(err, discovery.ErrUnknownDetector):
+				writeError(w, http.StatusBadRequest, "unknown_detector", err.Error())
+			default:
+				writeError(w, http.StatusServiceUnavailable, "discovery_unavailable", err.Error())
+			}
+			return
+		}
+		location := "/v1/discovery/runs/" + run.ID
+		w.Header().Set("Location", location)
+		w.Header().Set("Retry-After", "1")
+		writeJSON(w, r, http.StatusAccepted, discovery.TriggerResponse{
+			ID: run.ID, Status: run.Status, CreatedAt: run.CreatedAt, Links: discovery.RunLinks{Self: location},
+		})
+	default:
+		w.Header().Set("Allow", "GET, HEAD, POST")
+		writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "supported methods are GET, HEAD and POST")
+	}
+}
+
+func (s *Server) discoveryRun(w http.ResponseWriter, r *http.Request) {
+	if !allowRead(w, r) {
+		return
+	}
+	id := strings.TrimPrefix(r.URL.Path, "/v1/discovery/runs/")
+	if id == "" || strings.Contains(id, "/") {
+		writeError(w, http.StatusNotFound, "not_found", "discovery run not found")
+		return
+	}
+	run, err := s.discovery.Get(id)
+	if errors.Is(err, discovery.ErrRunNotFound) {
+		writeError(w, http.StatusNotFound, "discovery_run_not_found", "discovery run not found")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "discovery_read_failed", "unable to read discovery run")
+		return
+	}
+	writeJSON(w, r, http.StatusOK, run)
+}
+
 func (s *Server) protected(next http.HandlerFunc) http.HandlerFunc {
 	if s.token == "" {
 		return next
@@ -180,6 +264,15 @@ func (s *Server) secure(next http.Handler) http.Handler {
 		w.Header().Set("Cache-Control", "no-store")
 		next.ServeHTTP(w, r)
 	})
+}
+
+func remoteIsLoopback(remoteAddress string) bool {
+	host, _, err := net.SplitHostPort(remoteAddress)
+	if err != nil {
+		host = remoteAddress
+	}
+	ip := net.ParseIP(strings.Trim(host, "[]"))
+	return ip != nil && ip.IsLoopback()
 }
 
 func allowRead(w http.ResponseWriter, r *http.Request) bool {

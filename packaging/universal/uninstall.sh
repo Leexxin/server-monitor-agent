@@ -27,6 +27,7 @@ fi
 
 rm -f /opt/sma/bin/sma
 rm -rf /opt/sma/docs
+rm -rf /opt/sma/discovery
 if [ "$purge" = true ]; then
     rm -rf /opt/sma
     echo "SMA removed, including configuration. The sma system user was retained."

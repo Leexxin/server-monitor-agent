@@ -32,8 +32,14 @@ sma --listen-address=0.0.0.0:9108
 | `GET`, `HEAD` | `/healthz` | 无 | 进程存活探测 |
 | `GET`, `HEAD` | `/readyz` | 无 | 核心采集器就绪探测 |
 | `GET`, `HEAD` | `/version` | 无 | Agent 版本信息 |
+| `GET` | `/v1/discovery/capabilities` | 可配置 | 自动发现能力 |
+| `POST` | `/v1/discovery/runs` | 可配置；远程触发必须鉴权 | 创建自动发现任务 |
+| `GET` | `/v1/discovery/runs` | 可配置 | 最近发现任务 |
+| `GET` | `/v1/discovery/runs/{id}` | 可配置 | 发现任务结果 |
 
 除 `GET`、`HEAD` 外的方法返回 `405 Method Not Allowed`。未知路径返回 `404 Not Found`。
+
+自动发现接口的完整约定参见[自动发现接口对接文档](discovery-api-integration.md)。
 
 ### 2.2 时间、数值和单位
 

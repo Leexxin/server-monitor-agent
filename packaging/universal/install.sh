@@ -15,13 +15,15 @@ case "$(uname -s)" in
     *) echo "ERROR: SMA supports Linux only." >&2; exit 1 ;;
 esac
 
-install -d -m 0755 "$install_root/bin" "$install_root/docs"
+install -d -m 0755 "$install_root/bin" "$install_root/docs" "$install_root/discovery" "$install_root/discovery/scripts"
 install -d -m 0750 "$install_root/config"
 install -m 0755 "$script_dir/sma" "$install_root/bin/sma"
 install -m 0644 "$script_dir/README.md" "$install_root/README.md"
 install -m 0644 "$script_dir/docs/api-integration.md" "$install_root/docs/api-integration.md"
 install -m 0644 "$script_dir/docs/server-monitor-agent-development.md" "$install_root/docs/server-monitor-agent-development.md"
 install -m 0644 "$script_dir/docs/installation.md" "$install_root/docs/installation.md"
+install -m 0644 "$script_dir/docs/discovery-api-integration.md" "$install_root/docs/discovery-api-integration.md"
+install -m 0755 "$script_dir/discovery/common-services.sh" "$install_root/discovery/scripts/common-services.sh"
 
 if [ ! -e "$install_root/config/sma.env" ]; then
     install -m 0640 "$script_dir/sma.env" "$install_root/config/sma.env"

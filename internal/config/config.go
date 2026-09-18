@@ -28,6 +28,12 @@ type Config struct {
 	TLSKeyFile               string
 	MaxConcurrentRequests    int
 	ShutdownTimeout          time.Duration
+	DiscoveryEnabled         bool
+	DiscoveryTimeout         time.Duration
+	DiscoveryRetention       int
+	DiscoveryScriptDir       string
+	DiscoveryReportURL       string
+	DiscoveryReportTokenFile string
 }
 
 func Parse(args []string) (Config, error) {
@@ -46,6 +52,12 @@ func Parse(args []string) (Config, error) {
 	tlsKeyFile := fs.String("web.tls-key-file", env("SMA_TLS_KEY_FILE", ""), "TLS private key file")
 	maxConcurrent := fs.Int("web.max-concurrent-requests", envInt("SMA_MAX_CONCURRENT_REQUESTS", 32), "maximum concurrent requests")
 	shutdownTimeout := fs.Duration("web.shutdown-timeout", envDuration("SMA_SHUTDOWN_TIMEOUT", 10*time.Second), "graceful shutdown timeout")
+	discoveryEnabled := fs.Bool("discovery.enabled", envBool("SMA_DISCOVERY_ENABLED", true), "enable externally triggered discovery")
+	discoveryTimeout := fs.Duration("discovery.timeout", envDuration("SMA_DISCOVERY_TIMEOUT", 30*time.Second), "maximum duration of a discovery run")
+	discoveryRetention := fs.Int("discovery.retention", envInt("SMA_DISCOVERY_RETENTION", 20), "number of discovery runs retained in memory")
+	discoveryScriptDir := fs.String("discovery.script-dir", env("SMA_DISCOVERY_SCRIPT_DIR", "/opt/sma/discovery/scripts"), "root-owned allowlisted discovery script directory")
+	discoveryReportURL := fs.String("discovery.report-url", env("SMA_DISCOVERY_REPORT_URL", ""), "fixed URL receiving completed discovery reports")
+	discoveryReportTokenFile := fs.String("discovery.report-token-file", env("SMA_DISCOVERY_REPORT_TOKEN_FILE", ""), "file containing the report receiver bearer token")
 	if err := fs.Parse(args); err != nil {
 		return Config{}, err
 	}
@@ -69,8 +81,11 @@ func Parse(args []string) (Config, error) {
 			return Config{}, fmt.Errorf("web.telemetry-path conflicts with reserved path %s", reserved)
 		}
 	}
-	if *collectorTimeout <= 0 || *cacheTTL < 0 || *maxConcurrent <= 0 || *shutdownTimeout <= 0 {
+	if *collectorTimeout <= 0 || *cacheTTL < 0 || *maxConcurrent <= 0 || *shutdownTimeout <= 0 || *discoveryTimeout <= 0 || *discoveryRetention <= 0 {
 		return Config{}, errors.New("timeouts and max concurrent requests must be positive")
+	}
+	if *discoveryReportTokenFile != "" && *discoveryReportURL == "" {
+		return Config{}, errors.New("discovery.report-token-file requires discovery.report-url")
 	}
 	if (*tlsCertFile == "") != (*tlsKeyFile == "") {
 		return Config{}, errors.New("TLS certificate and key must be configured together")
@@ -94,6 +109,9 @@ func Parse(args []string) (Config, error) {
 		FilesystemExcludeFSTypes: fstypes, FilesystemExcludeMounts: mountRE, DiskExcludeDevices: deviceRE,
 		AuthTokenFile: *authTokenFile, TLSCertFile: *tlsCertFile, TLSKeyFile: *tlsKeyFile,
 		MaxConcurrentRequests: *maxConcurrent, ShutdownTimeout: *shutdownTimeout,
+		DiscoveryEnabled: *discoveryEnabled, DiscoveryTimeout: *discoveryTimeout,
+		DiscoveryRetention: *discoveryRetention, DiscoveryScriptDir: *discoveryScriptDir,
+		DiscoveryReportURL: *discoveryReportURL, DiscoveryReportTokenFile: *discoveryReportTokenFile,
 	}, nil
 }
 
@@ -132,6 +150,18 @@ func envInt(name string, fallback int) int {
 		return fallback
 	}
 	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return fallback
+	}
+	return parsed
+}
+
+func envBool(name string, fallback bool) bool {
+	value, ok := os.LookupEnv(name)
+	if !ok {
+		return fallback
+	}
+	parsed, err := strconv.ParseBool(value)
 	if err != nil {
 		return fallback
 	}

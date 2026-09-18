@@ -19,7 +19,11 @@ go_cache=${SMA_GOCACHE:-/tmp/sma-go-cache}
 revision=${SMA_REVISION:-unknown}
 build_time=${SMA_BUILD_TIME:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}
 source_epoch=${SOURCE_DATE_EPOCH:-$(date -u +%s)}
-package_release=${SMA_PACKAGE_RELEASE:-2}
+case "$version" in
+    0.1.0) default_package_release=2 ;;
+    *) default_package_release=1 ;;
+esac
+package_release=${SMA_PACKAGE_RELEASE:-$default_package_release}
 
 if ! command -v "$nfpm_bin" >/dev/null 2>&1 && [ ! -x "$nfpm_bin" ]; then
     echo "ERROR: nfpm was not found. Set NFPM_BIN=/path/to/nfpm." >&2
@@ -35,7 +39,7 @@ build_arch() {
     universal_arch=$3
     binary="$stage_dir/$goarch/sma"
     universal="$stage_dir/universal-$goarch"
-    mkdir -p "$(dirname "$binary")" "$universal/docs"
+    mkdir -p "$(dirname "$binary")" "$universal/docs" "$universal/discovery"
 
     CGO_ENABLED=0 GOOS=linux GOARCH="$goarch" GOCACHE="$go_cache" \
         go build -trimpath \
@@ -82,6 +86,8 @@ build_arch() {
     install -m 0644 docs/api-integration.md "$universal/docs/api-integration.md"
     install -m 0644 docs/server-monitor-agent-development.md "$universal/docs/server-monitor-agent-development.md"
     install -m 0644 docs/installation.md "$universal/docs/installation.md"
+    install -m 0644 docs/discovery-api-integration.md "$universal/docs/discovery-api-integration.md"
+    install -m 0755 packaging/discovery/common-services.sh "$universal/discovery/common-services.sh"
     tar -C "$universal" -czf "$release_dir/sma_${version}_linux_${universal_arch}.tar.gz" .
 }
 

@@ -72,6 +72,18 @@ contents:
       mode: 0644
       owner: root
       group: root
+  - src: docs/discovery-api-integration.md
+    dst: /opt/sma/docs/discovery-api-integration.md
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
+  - src: packaging/discovery/common-services.sh
+    dst: /opt/sma/discovery/scripts/common-services.sh
+    file_info:
+      mode: 0755
+      owner: root
+      group: root
 
 scripts:
   preinstall: packaging/scripts/preinstall.sh
