@@ -2,6 +2,8 @@
 
 SMA 的程序和配置统一位于 `/opt/sma`。安装和卸载必须使用 root 权限。
 
+需要从内网分享目录自动选择版本与安装包时，请参见[自动安装方案](automatic-installation.md)。
+
 ## 包选择
 
 | Linux 系统 | x86-64 | ARM64 |

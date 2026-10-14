@@ -1,0 +1,45 @@
+# SMA 自动安装方案
+
+## 目录约定
+
+在 SFTPGo 公共分享根目录放置以下文件：
+
+```text
+install-sma.sh
+latest.txt                    # 单行版本号，例如 0.2.0
+checksums.txt                 # 该版本所有包的 SHA-256，格式同 sha256sum
+sma_0.2.0_linux_amd64.deb
+sma_0.2.0_linux_arm64.deb
+sma-0.2.0-1.x86_64.rpm
+sma-0.2.0-1.aarch64.rpm
+sma_0.2.0_x86_64.apk
+sma_0.2.0_aarch64.apk
+sma_0.2.0_linux_x86_64.tar.gz
+sma_0.2.0_linux_aarch64.tar.gz
+```
+
+脚本读取 `latest.txt` 决定目标版本，再用 `checksums.txt` 找到适合当前系统与架构的文件名。新版本发布时，先上传所有包和新的 `checksums.txt`，最后更新 `latest.txt`。安装过程会验证 SHA-256，失败即停止。
+
+## 在 Linux 目标机运行
+
+```bash
+curl -fL 'http://192.168.33.123:8080/web/client/pubshares/MFAWcGkHLBH2ZLquo63Mcm/browse?path=%2Finstall-sma.sh' -o install-sma.sh
+sudo sh install-sma.sh
+```
+
+可选：`sudo sh install-sma.sh --version 0.2.0` 指定版本；`--force` 强制重装同版本。只有 root 可以执行实际安装。日志同步打印到终端并写入 `/var/log/sma-install.log`。临时下载文件安装结束后自动删除。
+
+脚本自动识别 Debian/Ubuntu、RPM 系发行版、Alpine，以及其他 Linux（通用包），支持 x86_64/amd64 与 aarch64/arm64。安装完成后，它会启用并启动 systemd 或 OpenRC 服务，检查运行和开机自启状态。未检测到这两种服务管理器时会停止。
+
+默认配置仍只监听 `127.0.0.1:9108`。跨主机访问时，按[安装文档](installation.md)配置监听地址、Token 和防火墙。
+
+## 检查与排错
+
+```bash
+sudo tail -n 100 /var/log/sma-install.log
+systemctl status sma.service      # systemd
+rc-service sma status             # OpenRC
+curl -f http://127.0.0.1:9108/healthz
+```
+
+分享地址目前是内网 HTTP，脚本和校验文件均经同一 HTTP 服务下载。该 SHA-256 只能发现损坏或上传错误，不能防止链路被同时篡改。生产部署应为 SFTPGo 启用 HTTPS，并通过可信渠道分发或校验安装脚本。

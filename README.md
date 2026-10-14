@@ -36,6 +36,7 @@ curl http://127.0.0.1:9108/metrics
 - [开发设计](docs/server-monitor-agent-development.md)
 - [接口对接](docs/api-integration.md)
 - [安装与卸载](docs/installation.md)
+- [自动安装](docs/automatic-installation.md)
 - [自动发现接口对接](docs/discovery-api-integration.md)
 
 ## 发布与制品

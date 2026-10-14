@@ -86,6 +86,7 @@ build_arch() {
     install -m 0644 docs/api-integration.md "$universal/docs/api-integration.md"
     install -m 0644 docs/server-monitor-agent-development.md "$universal/docs/server-monitor-agent-development.md"
     install -m 0644 docs/installation.md "$universal/docs/installation.md"
+    install -m 0644 docs/automatic-installation.md "$universal/docs/automatic-installation.md"
     install -m 0644 docs/discovery-api-integration.md "$universal/docs/discovery-api-integration.md"
     install -m 0755 packaging/discovery/common-services.sh "$universal/discovery/common-services.sh"
     tar -C "$universal" -czf "$release_dir/sma_${version}_linux_${universal_arch}.tar.gz" .

@@ -22,6 +22,7 @@ install -m 0644 "$script_dir/README.md" "$install_root/README.md"
 install -m 0644 "$script_dir/docs/api-integration.md" "$install_root/docs/api-integration.md"
 install -m 0644 "$script_dir/docs/server-monitor-agent-development.md" "$install_root/docs/server-monitor-agent-development.md"
 install -m 0644 "$script_dir/docs/installation.md" "$install_root/docs/installation.md"
+install -m 0644 "$script_dir/docs/automatic-installation.md" "$install_root/docs/automatic-installation.md"
 install -m 0644 "$script_dir/docs/discovery-api-integration.md" "$install_root/docs/discovery-api-integration.md"
 install -m 0755 "$script_dir/discovery/common-services.sh" "$install_root/discovery/scripts/common-services.sh"
 
