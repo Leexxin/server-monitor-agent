@@ -65,9 +65,9 @@ jobs:
       - name: Build release bundle
         run: |
           tar -C dist/packages -czf "dist/sma_${{ steps.version.outputs.version }}_linux_packages.tar.gz" .
-          sha256sum "dist/sma_${{ steps.version.outputs.version }}_linux_packages.tar.gz" > "dist/sma_${{ steps.version.outputs.version }}_linux_packages.tar.gz.sha256"
+          (cd dist && sha256sum "sma_${{ steps.version.outputs.version }}_linux_packages.tar.gz" > "sma_${{ steps.version.outputs.version }}_linux_packages.tar.gz.sha256")
           tar -czf "dist/sma_${{ steps.version.outputs.version }}_docs.tar.gz" README.md CHANGELOG.md CONTRIBUTING.md AGENTS.md docs
-          sha256sum "dist/sma_${{ steps.version.outputs.version }}_docs.tar.gz" > "dist/sma_${{ steps.version.outputs.version }}_docs.tar.gz.sha256"
+          (cd dist && sha256sum "sma_${{ steps.version.outputs.version }}_docs.tar.gz" > "sma_${{ steps.version.outputs.version }}_docs.tar.gz.sha256")
 
       - name: Test DEB lifecycle on Linux
         run: sudo env SMA_RUN_INSTALL_TESTS=1 sh scripts/test-install-linux.sh "dist/packages/sma_${{ steps.version.outputs.version }}_linux_amd64.deb"
