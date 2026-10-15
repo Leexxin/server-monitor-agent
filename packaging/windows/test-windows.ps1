@@ -45,8 +45,12 @@ if ($Lifecycle) {
     & "$PSScriptRoot/install-sma.ps1" -MsiPath $MsiPath
     if ((Get-FileHash -LiteralPath $config.authTokenFile).Hash -ne $initialHash) { throw 'Reinstallation changed token.' }
     Invoke-Ctl -Arguments @('disable'); Invoke-Ctl -Arguments @('enable'); Invoke-Ctl -Arguments @('stop'); Invoke-Ctl -Arguments @('start')
-    & $ctl config listen '192.0.2.1:9108' 2>$null
-    if ($LASTEXITCODE -eq 0) { throw 'Unbindable address unexpectedly accepted.' }
+    try {
+        $ErrorActionPreference = 'Continue'
+        & $ctl config listen '192.0.2.1:9108' 2>$null
+        $failedCode = $LASTEXITCODE
+    } finally { $ErrorActionPreference = 'Stop' }
+    if ($failedCode -eq 0) { throw 'Unbindable address unexpectedly accepted.' }
     Invoke-Ctl -Arguments @('doctor')
     if ((Get-Content -Raw "$data/config.json" | ConvertFrom-Json).listenAddress -ne $config.listenAddress) { throw 'Configuration rollback failed.' }
     Invoke-Ctl -Arguments @('token','reset','--yes')

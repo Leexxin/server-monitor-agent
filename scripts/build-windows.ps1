@@ -7,6 +7,7 @@ Push-Location $project
 try {
     if ($Version -notmatch '^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$') { throw 'Invalid version' }
     $stage = Join-Path $project "dist/windows-$Version"
+    if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
     $payload = Join-Path $stage 'payload'
     New-Item -ItemType Directory -Force $payload | Out-Null
     $env:CGO_ENABLED = '0'; $env:GOOS = 'windows'; $env:GOARCH = 'amd64'
