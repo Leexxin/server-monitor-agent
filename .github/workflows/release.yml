@@ -66,6 +66,8 @@ jobs:
         run: |
           tar -C dist/packages -czf "dist/sma_${{ steps.version.outputs.version }}_linux_packages.tar.gz" .
           sha256sum "dist/sma_${{ steps.version.outputs.version }}_linux_packages.tar.gz" > "dist/sma_${{ steps.version.outputs.version }}_linux_packages.tar.gz.sha256"
+          tar -czf "dist/sma_${{ steps.version.outputs.version }}_docs.tar.gz" README.md CHANGELOG.md CONTRIBUTING.md AGENTS.md docs
+          sha256sum "dist/sma_${{ steps.version.outputs.version }}_docs.tar.gz" > "dist/sma_${{ steps.version.outputs.version }}_docs.tar.gz.sha256"
 
       - name: Test DEB lifecycle on Linux
         run: sudo env SMA_RUN_INSTALL_TESTS=1 sh scripts/test-install-linux.sh "dist/packages/sma_${{ steps.version.outputs.version }}_linux_amd64.deb"
@@ -76,6 +78,10 @@ jobs:
         run: |
           tag="v${{ steps.version.outputs.version }}"
           if ! gh release view "$tag" >/dev/null 2>&1; then
-            gh release create "$tag" --title "SMA $tag" --generate-notes
+            if [ -f "docs/releases/$tag.md" ]; then
+              gh release create "$tag" --title "SMA $tag" --notes-file "docs/releases/$tag.md"
+            else
+              gh release create "$tag" --title "SMA $tag" --generate-notes
+            fi
           fi
           gh release upload "$tag" dist/packages/* dist/*.tar.gz dist/*.sha256 --clobber

@@ -267,7 +267,7 @@ uninstall() {
         rm -rf -- "$SMA_ROOT"
     else
         rm -rf -- "$SMA_ROOT/bin" "$SMA_ROOT/docs" "$SMA_ROOT/discovery"
-        rm -f "$SMA_ROOT/README.md" "$SMA_ROOT/installed-version"
+        rm -f "$SMA_ROOT/README.md" "$SMA_ROOT/CHANGELOG.md" "$SMA_ROOT/installed-version"
         if [ -n "$config_backup" ]; then
             mkdir -p "$SMA_ROOT"
             cp -pR "$config_backup/config" "$SMA_ROOT/"

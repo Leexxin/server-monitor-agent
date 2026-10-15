@@ -14,6 +14,36 @@ license: Proprietary
 umask: 0o022
 
 contents:
+  - src: docs/README.md
+    dst: /opt/sma/docs/README.md
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
+  - src: docs/maintenance.md
+    dst: /opt/sma/docs/maintenance.md
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
+  - src: docs/troubleshooting.md
+    dst: /opt/sma/docs/troubleshooting.md
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
+  - src: docs/releases/v0.2.3.md
+    dst: /opt/sma/docs/releases/v0.2.3.md
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
+  - src: CHANGELOG.md
+    dst: /opt/sma/CHANGELOG.md
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
   - src: dist/stage/package/installed-version
     dst: /opt/sma/installed-version
     file_info:

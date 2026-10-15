@@ -33,6 +33,10 @@ curl http://127.0.0.1:9108/metrics
 
 ## 文档
 
+- [统一文档目录](docs/README.md)
+- [sma-center 无数据排障](docs/troubleshooting.md)
+- [文档维护与发布规范](docs/maintenance.md)
+- [版本变更记录](CHANGELOG.md)
 - [开发设计](docs/server-monitor-agent-development.md)
 - [接口对接](docs/api-integration.md)
 - [安装与卸载](docs/installation.md)

@@ -24,7 +24,7 @@ sha256sum -c checksums.txt
 ## DEB
 
 ```bash
-sudo apt install ./sma_0.1.0_linux_amd64.deb
+sudo apt install ./sma_0.2.3_linux_amd64.deb
 ```
 
 卸载并保留配置：
@@ -33,17 +33,17 @@ sudo apt install ./sma_0.1.0_linux_amd64.deb
 sudo apt remove sma
 ```
 
-彻底清除配置：
+通过 SMA 工具卸载并清除 `/opt/sma`（含自动生成的 Token）：
 
 ```bash
-sudo apt purge sma
+sudo sma-ctl uninstall --purge
 ```
 
 ## RPM
 
 ```bash
-sudo dnf install ./sma-0.1.0-1.x86_64.rpm
-# 老系统也可使用：sudo yum install ./sma-0.1.0-1.x86_64.rpm
+sudo dnf install ./sma-0.2.3-1.x86_64.rpm
+# 老系统也可使用：sudo yum install ./sma-0.2.3-1.x86_64.rpm
 ```
 
 卸载：
@@ -57,7 +57,7 @@ sudo dnf remove sma
 本地未签名 APK 需要显式允许：
 
 ```bash
-sudo apk add --allow-untrusted ./sma_0.1.0_x86_64.apk
+sudo apk add --allow-untrusted ./sma_0.2.3_x86_64.apk
 ```
 
 卸载：
@@ -69,7 +69,7 @@ sudo apk del sma
 ## 通用包
 
 ```bash
-tar -xzf sma_0.1.0_linux_x86_64.tar.gz
+tar -xzf sma_0.2.3_linux_x86_64.tar.gz
 sudo ./install.sh
 ```
 
@@ -90,7 +90,9 @@ sudo ./uninstall.sh --purge
 ```text
 /opt/sma/
 ├── bin/sma
+├── bin/sma-ctl
 ├── config/sma.env
+├── config/token
 ├── discovery/scripts/common-services.sh
 ├── README.md
 └── docs/
@@ -104,7 +106,7 @@ sudo ./uninstall.sh --purge
 
 从 `0.1.0-1` DEB 升级到 `0.1.0-2` 或更高版本时，安装脚本会清理由旧包错误安装的 `/etc/init.d/sma`，防止 systemd 与 SysV/OpenRC 入口并存。
 
-安装器会创建无登录权限的 `sma` 系统用户。程序以该用户运行，安装内容归 root 所有。
+安装器会创建无登录权限的 `sma` 系统用户。程序以该用户运行，程序文件归 root 所有；Token 归 sma 所有且权限为 0600。原生包管理器的 purge 不保证删除运行时生成的 Token，完整清理请使用 `sma-ctl uninstall --purge`；日志、系统用户和已有备份的保留范围见生命周期文档。
 
 ## 配置和启动
 
@@ -187,7 +189,8 @@ SMA_OPTS="--listen-address=0.0.0.0:9108 --web.auth-token-file=/opt/sma/config/to
 查看当前能力：
 
 ```bash
-curl --fail http://127.0.0.1:9108/v1/discovery/capabilities
+SMA_TOKEN=$(sudo sma-ctl token show)
+curl --fail -H "Authorization: Bearer ${SMA_TOKEN}" http://127.0.0.1:9108/v1/discovery/capabilities
 ```
 
 本机触发一次发现：
@@ -195,6 +198,7 @@ curl --fail http://127.0.0.1:9108/v1/discovery/capabilities
 ```bash
 curl --fail \
   -X POST \
+  -H "Authorization: Bearer ${SMA_TOKEN}" \
   -H 'Content-Type: application/json' \
   -d '{}' \
   http://127.0.0.1:9108/v1/discovery/runs
