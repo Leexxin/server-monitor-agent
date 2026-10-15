@@ -30,11 +30,21 @@ if ! id sma >/dev/null 2>&1; then
     fi
 fi
 
-chown -R root:root /opt/sma
+# Do not recursively change ownership: existing 0600 tokens must remain readable
+# by the sma service account across upgrades.
+chown root:root /opt/sma /opt/sma/bin /opt/sma/bin/sma
 chmod 0755 /opt/sma /opt/sma/bin /opt/sma/bin/sma
 chown root:sma /opt/sma/config /opt/sma/config/sma.env
 chmod 0750 /opt/sma/config
 chmod 0640 /opt/sma/config/sma.env
+
+/opt/sma/bin/sma-ctl prepare-auth
+mkdir -p /usr/local/bin
+if [ ! -e /usr/local/bin/sma-ctl ] && [ ! -L /usr/local/bin/sma-ctl ]; then
+    ln -s /opt/sma/bin/sma-ctl /usr/local/bin/sma-ctl
+fi
+echo 'SMA 管理：sudo /opt/sma/bin/sma-ctl help'
+echo '查看 Bearer Token：sudo /opt/sma/bin/sma-ctl token show'
 
 if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
     # sma 0.1.0-1 incorrectly shipped an OpenRC script in DEB packages. Remove

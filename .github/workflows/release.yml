@@ -52,7 +52,9 @@ jobs:
           echo "$GOBIN" >> "$GITHUB_PATH"
 
       - name: Test
-        run: go test ./...
+        run: |
+          go test ./...
+          sh scripts/test-lifecycle.sh
 
       - name: Build packages
         env:
@@ -64,6 +66,9 @@ jobs:
         run: |
           tar -C dist/packages -czf "dist/sma_${{ steps.version.outputs.version }}_linux_packages.tar.gz" .
           sha256sum "dist/sma_${{ steps.version.outputs.version }}_linux_packages.tar.gz" > "dist/sma_${{ steps.version.outputs.version }}_linux_packages.tar.gz.sha256"
+
+      - name: Test DEB lifecycle on Linux
+        run: sudo env SMA_RUN_INSTALL_TESTS=1 sh scripts/test-install-linux.sh "dist/packages/sma_${{ steps.version.outputs.version }}_linux_amd64.deb"
 
       - name: Publish GitHub Release
         env:

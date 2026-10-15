@@ -6,15 +6,17 @@ SHARE_URL=${SMA_SHARE_URL:-http://192.168.33.123:8080/web/client/pubshares/MFAWc
 LOG_FILE=${SMA_INSTALL_LOG:-/var/log/sma-install.log}
 REQUESTED_VERSION=
 FORCE=0
+SHOW_TOKEN=0
 
 usage() {
     cat <<'EOF'
-Usage: sudo sh install-sma.sh [--version VERSION] [--force]
+Usage: sudo sh install-sma.sh [--version VERSION] [--force] [--show-token]
 
 Options:
   --version VERSION  Install this version instead of latest.txt (its files must
                      still be present in checksums.txt).
   --force            Reinstall even when the installed version matches.
+  --show-token       Print the Bearer Token after successful installation.
   -h, --help         Show this help.
 
 Environment:
@@ -31,6 +33,7 @@ while [ "$#" -gt 0 ]; do
             shift 2
             ;;
         --force) FORCE=1; shift ;;
+        --show-token) SHOW_TOKEN=1; shift ;;
         -h|--help) usage; exit 0 ;;
         *) usage >&2; exit 2 ;;
     esac
@@ -61,7 +64,9 @@ fatal() {
 
 work_dir=$(mktemp -d /tmp/sma-install.XXXXXX) || fatal 'Cannot create temporary directory.'
 cleanup() { rm -rf -- "$work_dir"; }
-trap cleanup EXIT HUP INT TERM
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' HUP TERM
 
 run_logged() {
     log "RUN: $*"
@@ -195,6 +200,23 @@ else
     chmod 0644 /opt/sma/installed-version
 fi
 
+download sma-ctl.sh "$work_dir/sma-ctl.sh"
+download sma-ctl.sh.sha256 "$work_dir/sma-ctl.sh.sha256"
+command -v sha256sum >/dev/null 2>&1 || fatal 'sha256sum is required.'
+ctl_expected=$(awk '$2=="sma-ctl.sh" {print $1}' "$work_dir/sma-ctl.sh.sha256")
+printf '%s\n' "$ctl_expected" | grep -Eq '^[0-9a-f]{64}$' || fatal 'Invalid sma-ctl checksum.'
+ctl_actual=$(sha256sum "$work_dir/sma-ctl.sh" | awk '{print $1}')
+[ "$ctl_actual" = "$ctl_expected" ] || fatal 'sma-ctl checksum mismatch.'
+install -m 0755 "$work_dir/sma-ctl.sh" /opt/sma/bin/sma-ctl
+chown root:root /opt/sma/bin/sma-ctl
+mkdir -p /usr/local/bin
+if [ ! -e /usr/local/bin/sma-ctl ] && [ ! -L /usr/local/bin/sma-ctl ]; then
+    ln -s /opt/sma/bin/sma-ctl /usr/local/bin/sma-ctl
+elif [ "$(readlink /usr/local/bin/sma-ctl 2>/dev/null || true)" != /opt/sma/bin/sma-ctl ]; then
+    log 'Existing /usr/local/bin/sma-ctl was preserved; use /opt/sma/bin/sma-ctl.'
+fi
+run_logged /opt/sma/bin/sma-ctl prepare-auth
+
 if [ "$service_manager" = systemd ]; then
     run_logged systemctl daemon-reload
     run_logged systemctl enable sma.service
@@ -207,3 +229,13 @@ else
     run_logged rc-service sma status
 fi
 log "SMA $version installed and enabled at boot. Log: $LOG_FILE"
+run_logged /opt/sma/bin/sma-ctl config show
+log '管理：sudo /opt/sma/bin/sma-ctl help'
+log '查看 Token：sudo /opt/sma/bin/sma-ctl token show'
+log '检查状态：sudo /opt/sma/bin/sma-ctl status'
+log '卸载：sudo /opt/sma/bin/sma-ctl uninstall'
+if [ "$SHOW_TOKEN" -eq 1 ]; then
+    # Deliberately outside log()/run_logged(): never persist the secret to our log.
+    printf '\nBearer Token（仅本次标准输出，请妥善保存）：\n'
+    /opt/sma/bin/sma-ctl token show
+fi

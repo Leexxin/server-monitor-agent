@@ -6,6 +6,9 @@
 
 ```text
 install-sma.sh
+install-sma.sh.sha256
+sma-ctl.sh
+sma-ctl.sh.sha256
 latest.txt                    # 单行版本号，例如 0.2.0
 checksums.txt                 # 该版本所有包的 SHA-256，格式同 sha256sum
 sma_0.2.0_linux_amd64.deb
@@ -31,7 +34,7 @@ sudo sh install-sma.sh
 
 脚本自动识别 Debian/Ubuntu、RPM 系发行版、Alpine，以及其他 Linux（通用包），支持 x86_64/amd64 与 aarch64/arm64。安装完成后，它会启用并启动 systemd 或 OpenRC 服务，检查运行和开机自启状态。未检测到这两种服务管理器时会停止。
 
-默认配置仍只监听 `127.0.0.1:9108`。跨主机访问时，按[安装文档](installation.md)配置监听地址、Token 和防火墙。
+安装时自动生成并启用本机独立 Bearer Token，保留已有 Token。使用 `--show-token` 在成功后显示凭据，或执行 `sudo sma-ctl token show` 查看；Token 不写入安装日志。默认配置仍只监听 `127.0.0.1:9108`。完整运维命令见[全生命周期操作说明](lifecycle.md)。
 
 ## 检查与排错
 

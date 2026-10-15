@@ -12,4 +12,7 @@ fi
 
 # Package managers preserve /opt/sma/config/sma.env as a configuration file.
 # The dedicated sma system account is intentionally retained for safe upgrades.
+if [ ! -f /opt/sma/bin/sma-ctl ] && [ "$(readlink /usr/local/bin/sma-ctl 2>/dev/null || true)" = /opt/sma/bin/sma-ctl ]; then
+    rm -f /usr/local/bin/sma-ctl
+fi
 exit 0

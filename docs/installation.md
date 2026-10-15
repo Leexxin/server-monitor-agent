@@ -2,6 +2,8 @@
 
 SMA 的程序和配置统一位于 `/opt/sma`。安装和卸载必须使用 root 权限。
 
+新安装包提供 `sma-ctl` 管理工具，并在安装时生成独立 Bearer Token。查看凭据：`sudo sma-ctl token show`。启停、自启、Token 更换、升级和卸载见[全生命周期操作说明](lifecycle.md)。旧包需重新运行更新后的自动安装脚本来补齐这些功能。
+
 需要从内网分享目录自动选择版本与安装包时，请参见[自动安装方案](automatic-installation.md)。
 
 ## 包选择

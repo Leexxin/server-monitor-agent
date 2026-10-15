@@ -1,6 +1,10 @@
 #!/bin/sh
 set -eu
 
+if [ -x /opt/sma/bin/sma-ctl ]; then
+    exec /opt/sma/bin/sma-ctl uninstall "$@"
+fi
+
 if [ "$(id -u)" -ne 0 ]; then
     echo "ERROR: SMA must be removed as root." >&2
     echo "Run: sudo ./uninstall.sh" >&2

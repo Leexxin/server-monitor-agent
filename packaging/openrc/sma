@@ -6,6 +6,8 @@ command="/opt/sma/bin/sma"
 command_user="sma:sma"
 command_background="yes"
 pidfile="/run/sma.pid"
+output_log="/var/log/sma.log"
+error_log="/var/log/sma.log"
 
 if [ -r /opt/sma/config/sma.env ]; then
     . /opt/sma/config/sma.env

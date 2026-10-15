@@ -47,6 +47,7 @@ build_arch() {
         -o "$binary" ./cmd/sma
     mkdir -p "$stage_dir/package"
     install -m 0755 "$binary" "$stage_dir/package/sma"
+    printf '%s\n' "$version" > "$stage_dir/package/installed-version"
 
     NFPM_ARCH="$package_arch" NFPM_VERSION="$version" NFPM_RELEASE="$package_release" SOURCE_DATE_EPOCH="$source_epoch" \
         "$nfpm_bin" package --config packaging/nfpm.yaml --packager deb \
@@ -77,6 +78,8 @@ build_arch() {
         --target "$release_dir/sma_${version}_${universal_arch}.apk"
 
     install -m 0755 "$binary" "$universal/sma"
+    install -m 0644 "$stage_dir/package/installed-version" "$universal/installed-version"
+    install -m 0755 scripts/sma-ctl.sh "$universal/sma-ctl.sh"
     install -m 0755 packaging/universal/install.sh "$universal/install.sh"
     install -m 0755 packaging/universal/uninstall.sh "$universal/uninstall.sh"
     install -m 0644 packaging/config/sma.env "$universal/sma.env"
@@ -87,6 +90,7 @@ build_arch() {
     install -m 0644 docs/server-monitor-agent-development.md "$universal/docs/server-monitor-agent-development.md"
     install -m 0644 docs/installation.md "$universal/docs/installation.md"
     install -m 0644 docs/automatic-installation.md "$universal/docs/automatic-installation.md"
+    install -m 0644 docs/lifecycle.md "$universal/docs/lifecycle.md"
     install -m 0644 docs/discovery-api-integration.md "$universal/docs/discovery-api-integration.md"
     install -m 0755 packaging/discovery/common-services.sh "$universal/discovery/common-services.sh"
     tar -C "$universal" -czf "$release_dir/sma_${version}_linux_${universal_arch}.tar.gz" .
@@ -96,9 +100,15 @@ cd "$project_dir"
 build_arch amd64 amd64 x86_64
 build_arch arm64 arm64 aarch64
 
+install -m 0755 scripts/install-sma.sh "$release_dir/install-sma.sh"
+install -m 0755 scripts/sma-ctl.sh "$release_dir/sma-ctl.sh"
+printf '%s\n' "$version" > "$release_dir/latest.txt"
+
 (
     cd "$release_dir"
     sha256sum ./*.deb ./*.rpm ./*.apk ./*.tar.gz > checksums.txt
+    sha256sum install-sma.sh > install-sma.sh.sha256
+    sha256sum sma-ctl.sh > sma-ctl.sh.sha256
 )
 
 echo "Packages created in $release_dir"
