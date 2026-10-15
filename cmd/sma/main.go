@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -21,29 +22,49 @@ import (
 )
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
-	cfg, err := config.Parse(os.Args[1:])
+	if err := platformMain(run); err != nil {
+		slog.Error("agent stopped", "error", err)
+		os.Exit(1)
+	}
+}
+
+func run(rootCtx context.Context, started func()) (result error) {
+	logger, closeLog, err := platformLogger()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if result != nil {
+			logger.Error("agent failed", "error", result)
+		}
+		closeLog()
+	}()
+	args, err := platformArgs(os.Args[1:])
+	if err != nil {
+		return err
+	}
+	cfg, err := config.Parse(args)
 	if err != nil {
 		logger.Error("invalid configuration", "error", err)
-		os.Exit(2)
+		return err
 	}
 	service := snapshot.New(collector.Enabled(cfg), cfg.CollectorTimeout, cfg.CacheTTL)
 	detectors := []discovery.Detector{discovery.ProcessDetector{ProcPath: cfg.ProcPath}}
 	scriptDetectors, err := discovery.LoadScriptDetectors(cfg.DiscoveryScriptDir)
 	if err != nil {
 		logger.Error("load discovery scripts", "error", err)
-		os.Exit(2)
+		return err
 	}
 	detectors = append(detectors, scriptDetectors...)
 	reportToken, err := readOptionalSecret(cfg.DiscoveryReportTokenFile)
 	if err != nil {
 		logger.Error("read discovery report token", "error", err)
-		os.Exit(2)
+		return err
 	}
 	reporter, err := discovery.NewReporter(cfg.DiscoveryReportURL, reportToken)
 	if err != nil {
 		logger.Error("configure discovery reporter", "error", err)
-		os.Exit(2)
+		return err
 	}
 	discoveryService := discovery.New(detectors, discovery.Options{
 		Enabled: cfg.DiscoveryEnabled, Timeout: cfg.DiscoveryTimeout,
@@ -52,20 +73,27 @@ func main() {
 	webServer, err := web.New(cfg, service, discoveryService, buildinfo.Current())
 	if err != nil {
 		logger.Error("initialize HTTP server", "error", err)
-		os.Exit(2)
+		return err
 	}
 	httpServer := webServer.HTTPServer()
+	listener, err := net.Listen("tcp", cfg.ListenAddress)
+	if err != nil {
+		logger.Error("listen failed", "error", err)
+		return err
+	}
+	defer listener.Close()
 
-	rootCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	rootCtx, stop := signal.NotifyContext(rootCtx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+	started()
 	serverErrors := make(chan error, 1)
 	go func() {
 		logger.Info("server monitor agent started", "address", cfg.ListenAddress, "version", buildinfo.Version)
 		if cfg.TLSCertFile != "" {
-			serverErrors <- httpServer.ListenAndServeTLS(cfg.TLSCertFile, cfg.TLSKeyFile)
+			serverErrors <- httpServer.ServeTLS(listener, cfg.TLSCertFile, cfg.TLSKeyFile)
 			return
 		}
-		serverErrors <- httpServer.ListenAndServe()
+		serverErrors <- httpServer.Serve(listener)
 	}()
 
 	select {
@@ -74,18 +102,19 @@ func main() {
 	case err := <-serverErrors:
 		if !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("HTTP server failed", "error", err)
-			os.Exit(1)
+			return err
 		}
-		return
+		return nil
 	}
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
 	defer cancel()
 	if err := httpServer.Shutdown(shutdownCtx); err != nil {
 		logger.Error("graceful shutdown failed", "error", err)
-		os.Exit(1)
+		return err
 	}
 	logger.Info("server monitor agent stopped")
+	return nil
 }
 
 func readOptionalSecret(path string) (string, error) {

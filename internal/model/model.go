@@ -20,7 +20,11 @@ type Snapshot struct {
 }
 
 type Host struct {
-	Hostname string `json:"hostname"`
+	Hostname           string   `json:"hostname"`
+	OS                 string   `json:"os,omitempty"`
+	Architecture       string   `json:"architecture,omitempty"`
+	SystemMountpoint   string   `json:"systemMountpoint,omitempty"`
+	UnsupportedMetrics []string `json:"unsupportedMetrics,omitempty"`
 }
 
 type CPU struct {

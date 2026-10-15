@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <Product Id="*" Name="SMA" Language="1033" Version="$(var.MsiVersion)" Manufacturer="SMA Project" UpgradeCode="48D2A5BA-96F0-4457-98A0-CBE35CE7247C">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x64" Description="SMA Windows monitoring agent" />
+    <MediaTemplate EmbedCab="yes" />
+    <MajorUpgrade Schedule="afterInstallInitialize" DowngradeErrorMessage="A newer SMA version is already installed." />
+    <Condition Message="SMA requires 64-bit Windows.">Installed OR VersionNT64</Condition>
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/Leexxin/server-monitor-agent" />
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLDIR" Name="SMA">
+          <Component Id="Agent" Guid="F4E6F765-3BA9-47EF-9DA5-E149CA0695EA" Win64="yes">
+            <File Id="AgentExe" Source="$(var.Payload)\sma.exe" KeyPath="yes" />
+            <ServiceInstall Id="ServiceInstall" Name="SMA" DisplayName="SMA Server Monitor Agent" Description="Lightweight CPU, memory and disk monitoring agent" Type="ownProcess" Start="auto" ErrorControl="normal" Account="LocalSystem" Vital="yes">
+              <util:ServiceConfig FirstFailureActionType="restart" SecondFailureActionType="restart" ThirdFailureActionType="restart" RestartServiceDelayInSeconds="5" ResetPeriodInDays="1" />
+            </ServiceInstall>
+            <ServiceControl Id="ServiceControl" Name="SMA" Start="install" Stop="both" Remove="uninstall" Wait="yes" />
+          </Component>
+          <Component Id="Management" Guid="878976EA-3EA3-4EF5-9546-8A908CFA42FD" Win64="yes">
+            <File Id="CtlExe" Source="$(var.Payload)\sma-ctl.exe" KeyPath="yes" />
+          </Component>
+          <Component Id="Registration" Guid="7F92A7C2-E54F-499D-A014-612C3C62939B" Win64="yes">
+            <RegistryValue Root="HKLM" Key="Software\SMA" Name="ProductCode" Value="[ProductCode]" Type="string" KeyPath="yes" />
+            <RegistryValue Root="HKLM" Key="Software\SMA" Name="Version" Value="$(var.DisplayVersion)" Type="string" />
+          </Component>
+        </Directory>
+      </Directory>
+    </Directory>
+    <CustomAction Id="Provision" FileKey="CtlExe" ExeCommand="provision" Execute="deferred" Impersonate="no" Return="check" />
+    <InstallExecuteSequence>
+      <Custom Action="Provision" After="InstallFiles">NOT REMOVE~="ALL"</Custom>
+    </InstallExecuteSequence>
+    <Feature Id="Complete" Title="SMA" Level="1">
+      <ComponentRef Id="Agent" /><ComponentRef Id="Management" /><ComponentRef Id="Registration" />
+      <ComponentGroupRef Id="SupportFiles" />
+    </Feature>
+  </Product>
+</Wix>

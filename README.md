@@ -1,6 +1,6 @@
 # SMA — Server Monitor Agent
 
-SMA 是一个面向 Linux 的轻量级服务器监控 Agent。它直接读取 `/proc` 和 `statfs(2)`，通过 Prometheus 文本接口和 JSON 快照接口提供 CPU、内存、负载、运行时间、文件系统及磁盘 I/O 指标。
+SMA 是轻量级服务器监控 Agent，通过 Prometheus 和 JSON 快照提供指标。Linux 直接读取 `/proc` 和 `statfs(2)`；Windows x64 预览版直接调用系统 API，提供 CPU、内存、固定卷容量及 I/O、运行时间。Windows 安装和对接见 [Windows 指南](docs/windows/README.md)。
 
 除监控指标外，SMA 还提供外部触发的异步自动发现，可识别常见中间件、数据库和 SFTP/FTP 服务，并支持把发现结果上报到管理员预配置的固定地址。
 
@@ -50,7 +50,7 @@ curl http://127.0.0.1:9108/metrics
 
 ## 支持范围
 
-- 运行平台：Linux
+- 稳定平台：Linux；Windows x64 为预览版，实际验证范围见 Windows 指南
 - 架构目标：amd64、arm64
 - Go：1.23 或更高版本
 - 部署方式：优先使用 systemd，也可运行于容器

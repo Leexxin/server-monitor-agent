@@ -16,6 +16,7 @@ import (
 	"sma/internal/config"
 	"sma/internal/discovery"
 	"sma/internal/model"
+	"sma/internal/securefile"
 	"sma/internal/snapshot"
 )
 
@@ -63,6 +64,9 @@ func TestEndpoints(t *testing.T) {
 func TestBearerAuthentication(t *testing.T) {
 	tokenFile := filepath.Join(t.TempDir(), "token")
 	if err := os.WriteFile(tokenFile, []byte("secret\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := securefile.Protect(tokenFile, false); err != nil {
 		t.Fatal(err)
 	}
 	cfg := testConfig()

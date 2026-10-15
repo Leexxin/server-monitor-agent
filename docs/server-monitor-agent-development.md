@@ -1,5 +1,7 @@
 # 轻量级服务器监控 Agent 开发文档
 
+Windows x64 首版现采用相同仓库、共享 HTTP/快照/鉴权、按 Go 构建约束分离采集器及运行入口。通过 x/sys 固定依赖调用 Windows API 和 SCM，原生服务、管理工具、MSI/PowerShell 安装与 Windows CI 配套维护，详细范围和限制见 [Windows 开发说明](windows/README.md#构建和发布)。下文 Linux 设计继续适用。
+
 > 文档状态：Draft v0.1
 > 目标平台：Linux（第一阶段）
 > 建议实现语言：Go 1.23+

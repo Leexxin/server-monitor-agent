@@ -1,5 +1,7 @@
 # SMA 安装与卸载
 
+本页为 Linux 安装包；Windows MSI 和安装脚本见 [Windows 指南](windows/README.md)。
+
 SMA 的程序和配置统一位于 `/opt/sma`。安装和卸载必须使用 root 权限。
 
 新安装包提供 `sma-ctl` 管理工具，并在安装时生成独立 Bearer Token。查看凭据：`sudo sma-ctl token show`。启停、自启、Token 更换、升级和卸载见[全生命周期操作说明](lifecycle.md)。旧包需重新运行更新后的自动安装脚本来补齐这些功能。

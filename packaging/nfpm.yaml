@@ -14,6 +14,18 @@ license: Proprietary
 umask: 0o022
 
 contents:
+  - src: docs/windows/README.md
+    dst: /opt/sma/docs/windows/README.md
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
+  - src: docs/releases/windows-v0.3.0-rc.1.md
+    dst: /opt/sma/docs/releases/windows-v0.3.0-rc.1.md
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
   - src: docs/README.md
     dst: /opt/sma/docs/README.md
     file_info:

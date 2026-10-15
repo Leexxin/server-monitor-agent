@@ -27,3 +27,19 @@ func TestPrometheusEncoding(t *testing.T) {
 		}
 	}
 }
+
+func TestWindowsUnsupportedMetricsAreNotExported(t *testing.T) {
+	s := model.Snapshot{Host: model.Host{OS: "windows"}, Memory: &model.Memory{TotalBytes: 100, AvailableBytes: 40},
+		Filesystems: []model.Filesystem{{Mountpoint: `C:\`, SizeBytes: 100}}, Disks: []model.Disk{{Device: "C:", ReadBytes: 50}}}
+	result := string(Prometheus(s, buildinfo.Info{}, AgentStats{}))
+	for _, name := range []string{"sma_load1", "sma_memory_free_bytes", "sma_memory_swap_total_bytes", "sma_filesystem_files", "sma_disk_io_seconds_total", "sma_disk_io_weighted_seconds_total"} {
+		if strings.Contains(result, name) {
+			t.Errorf("unsupported metric exported: %s", name)
+		}
+	}
+	for _, name := range []string{"sma_memory_total_bytes 100", "sma_memory_available_bytes 40", "sma_disk_read_bytes_total"} {
+		if !strings.Contains(result, name) {
+			t.Errorf("supported metric missing: %s", name)
+		}
+	}
+}
