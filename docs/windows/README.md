@@ -95,7 +95,7 @@ Windows 不提供 Linux load average，`load` 缺失，应显示“—/不支持
 
 Mac：`make check`、`CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build ./...`。Windows：Go 1.23、x/sys v0.30.0、WiX 3.14，运行 `scripts/build-windows.ps1`。代码和文档同一 PR，制品不进 Git。
 
-Windows 工作流执行原生测试、PowerShell 5.1 语法检查、MSI 构建、Windows Server 2022 runner 生命周期测试。`windows-v*` 标签发布预览包；Linux 发布和稳定版索引独立。CI 验证自启配置，不重启 runner。用户 LTSC、Windows 11 和其他 Server 版本待分别验证。
+Windows 工作流执行原生测试、PowerShell 5.1 语法检查、MSI 构建、Windows Server 2022 runner 生命周期测试，覆盖远程监听设置、限定防火墙来源和卸载规则清理。`windows-v*` 标签发布预览包；Linux 发布和稳定版索引独立。CI 验证自启配置，不重启 runner。用户 LTSC、Windows 11 和其他 Server 版本待分别验证。
 
 制品未做 Authenticode 签名，可能提示未知发布者。发布范围见 [预览版说明](../releases/windows-v0.3.0-rc.1.md)。
 

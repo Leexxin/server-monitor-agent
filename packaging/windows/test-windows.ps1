@@ -11,7 +11,10 @@ function Invoke-Ctl([string[]]$Arguments) {
 if ($Lifecycle) {
     if ($env:SMA_RUN_WINDOWS_INSTALL_TESTS -ne '1') { throw 'Lifecycle test requires SMA_RUN_WINDOWS_INSTALL_TESTS=1 on a disposable machine.' }
     if ((Test-Path -LiteralPath $data) -or (Get-Service SMA -ErrorAction SilentlyContinue)) { throw 'Lifecycle test requires a clean machine without SMA.' }
-    & "$PSScriptRoot/install-sma.ps1" -MsiPath $MsiPath
+    & "$PSScriptRoot/install-sma.ps1" -MsiPath $MsiPath -ListenAddress '0.0.0.0:9108' -AllowedSource '127.0.0.1'
+    $rule = Get-NetFirewallRule -Name 'SMA-Agent-Inbound'
+    $sources = @($rule | Get-NetFirewallAddressFilter | Select-Object -ExpandProperty RemoteAddress)
+    if ($sources.Count -ne 1 -or $sources[0] -ne '127.0.0.1') { throw 'Firewall source scope was not applied.' }
 }
 Invoke-Ctl -Arguments @('doctor')
 $config = Get-Content -Raw -LiteralPath "$data/config.json" | ConvertFrom-Json
@@ -65,5 +68,6 @@ if ($Lifecycle) {
     if ((Get-FileHash -LiteralPath $config.authTokenFile).Hash -ne $rotatedHash) { throw 'Reinstall did not retain token.' }
     & "$PSScriptRoot/uninstall-sma.ps1" -Purge -Yes
     if ((Test-Path $data) -or (Get-Service SMA -ErrorAction SilentlyContinue)) { throw 'Purge did not clean installation.' }
+    if (Get-NetFirewallRule -Name 'SMA-Agent-Inbound' -ErrorAction SilentlyContinue) { throw 'Uninstall left its firewall rule.' }
     Write-Host 'PASS: install/reinstall, autostart configuration, service controls, config rollback, token rotation, preserved uninstall, reinstall and purge.'
 }

@@ -54,6 +54,7 @@ jobs:
           name: windows-diagnostic-logs
           path: |
             ${{ runner.temp }}/sma-*.log*
+            C:/Users/RUNNER~1/AppData/Local/Temp/sma-*.log*
             C:/ProgramData/SMA/logs/*.log*
   publish:
     if: startsWith(github.ref, 'refs/tags/windows-v')
