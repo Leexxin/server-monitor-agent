@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -40,7 +41,11 @@ func Parse(args []string) (Config, error) {
 	fs := flag.NewFlagSet("sma", flag.ContinueOnError)
 	listen := fs.String("listen-address", env("SMA_LISTEN_ADDRESS", "127.0.0.1:9108"), "HTTP listen address")
 	telemetryPath := fs.String("web.telemetry-path", env("SMA_TELEMETRY_PATH", "/metrics"), "Prometheus metrics path")
-	enabled := fs.String("collector.enabled", env("SMA_COLLECTOR_ENABLED", "cpu,memory,filesystem,disk,load,uptime"), "comma-separated collectors")
+	defaultCollectors := "cpu,memory,filesystem,disk,load,uptime"
+	if runtime.GOOS == "windows" {
+		defaultCollectors = "cpu,memory,filesystem,disk,uptime"
+	}
+	enabled := fs.String("collector.enabled", env("SMA_COLLECTOR_ENABLED", defaultCollectors), "comma-separated collectors")
 	collectorTimeout := fs.Duration("collector.timeout", envDuration("SMA_COLLECTOR_TIMEOUT", 2*time.Second), "timeout for a collection round")
 	cacheTTL := fs.Duration("collector.cache-ttl", envDuration("SMA_CACHE_TTL", 500*time.Millisecond), "snapshot cache duration")
 	procPath := fs.String("path.procfs", env("SMA_PROC_PATH", "/proc"), "procfs mount path")
@@ -52,7 +57,7 @@ func Parse(args []string) (Config, error) {
 	tlsKeyFile := fs.String("web.tls-key-file", env("SMA_TLS_KEY_FILE", ""), "TLS private key file")
 	maxConcurrent := fs.Int("web.max-concurrent-requests", envInt("SMA_MAX_CONCURRENT_REQUESTS", 32), "maximum concurrent requests")
 	shutdownTimeout := fs.Duration("web.shutdown-timeout", envDuration("SMA_SHUTDOWN_TIMEOUT", 10*time.Second), "graceful shutdown timeout")
-	discoveryEnabled := fs.Bool("discovery.enabled", envBool("SMA_DISCOVERY_ENABLED", true), "enable externally triggered discovery")
+	discoveryEnabled := fs.Bool("discovery.enabled", envBool("SMA_DISCOVERY_ENABLED", runtime.GOOS != "windows"), "enable externally triggered discovery")
 	discoveryTimeout := fs.Duration("discovery.timeout", envDuration("SMA_DISCOVERY_TIMEOUT", 30*time.Second), "maximum duration of a discovery run")
 	discoveryRetention := fs.Int("discovery.retention", envInt("SMA_DISCOVERY_RETENTION", 20), "number of discovery runs retained in memory")
 	discoveryScriptDir := fs.String("discovery.script-dir", env("SMA_DISCOVERY_SCRIPT_DIR", "/opt/sma/discovery/scripts"), "root-owned allowlisted discovery script directory")
@@ -60,6 +65,9 @@ func Parse(args []string) (Config, error) {
 	discoveryReportTokenFile := fs.String("discovery.report-token-file", env("SMA_DISCOVERY_REPORT_TOKEN_FILE", ""), "file containing the report receiver bearer token")
 	if err := fs.Parse(args); err != nil {
 		return Config{}, err
+	}
+	if runtime.GOOS == "windows" && *discoveryEnabled {
+		return Config{}, errors.New("discovery is not supported on Windows in this release")
 	}
 
 	known := map[string]bool{"cpu": true, "memory": true, "filesystem": true, "disk": true, "load": true, "uptime": true}

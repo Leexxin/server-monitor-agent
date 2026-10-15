@@ -11,10 +11,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"sort"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -76,11 +74,8 @@ func LoadScriptDetectors(directory string) ([]Detector, error) {
 		if err != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0o111 == 0 || info.Mode().Perm()&0o022 != 0 {
 			continue
 		}
-		if runtime.GOOS == "linux" {
-			stat, ok := info.Sys().(*syscall.Stat_t)
-			if !ok || stat.Uid != 0 {
-				continue
-			}
+		if !trustedScriptOwner(info) {
+			continue
 		}
 		detectors = append(detectors, ScriptDetector{name: name, path: path})
 	}

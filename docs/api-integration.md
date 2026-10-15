@@ -1,5 +1,7 @@
 # SMA 接口对接文档
 
+Windows x64 预览版沿用本接口。平台元数据、CPU 汇总口径、系统盘选择与不支持字段处理见 [Windows 接口说明](windows/README.md#接口对接)。`host` 新增 `os`、`architecture`、`systemMountpoint`、`unsupportedMetrics`，客户端应忽略未知新增字段；Windows 的不支持字段不能把占位 0 当成测量值。
+
 > 接口版本：v1
 > 对应 Agent：v0.1.0+
 > 更新日期：2026-09-15

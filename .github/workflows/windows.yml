@@ -1,0 +1,74 @@
+name: Windows
+on:
+  pull_request:
+    branches: [main]
+  push:
+    tags: ['windows-v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+          cache: true
+      - name: Test Windows code and native collectors
+        run: |
+          go vet ./...
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          go test -race ./...
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Parse Windows PowerShell 5.1 scripts
+        shell: powershell
+        run: |
+          Get-ChildItem packaging/windows/*.ps1,scripts/build-windows.ps1 | ForEach-Object {
+            $tokens = $null; $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$tokens,[ref]$errors)
+            if ($errors) { throw ($errors | Out-String) }
+          }
+      - name: Build Windows MSI and verification ZIP
+        shell: powershell
+        run: ./scripts/build-windows.ps1 -Revision '${{ github.sha }}'
+      - name: Verify MSI lifecycle on disposable Windows runner
+        shell: powershell
+        env:
+          SMA_RUN_WINDOWS_INSTALL_TESTS: '1'
+        run: ./packaging/windows/test-windows.ps1 -Lifecycle -MsiPath (Resolve-Path dist/windows/*.msi).Path
+      - name: Upload Windows packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: sma-windows-amd64
+          path: |
+            dist/windows/*.msi
+            dist/windows/*.zip
+            dist/windows/checksums-windows.txt
+          if-no-files-found: error
+      - name: Collect diagnostic logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-diagnostic-logs
+          path: |
+            ${{ runner.temp }}/sma-*.log*
+            C:/Users/RUNNER~1/AppData/Local/Temp/sma-*.log*
+            C:/ProgramData/SMA/logs/*.log*
+  publish:
+    if: startsWith(github.ref, 'refs/tags/windows-v')
+    needs: windows
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: sma-windows-amd64
+          path: dist/windows
+      - name: Publish Windows preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/windows/* --prerelease --title 'SMA Windows v0.3.0-rc.1' --notes-file docs/releases/windows-v0.3.0-rc.1.md

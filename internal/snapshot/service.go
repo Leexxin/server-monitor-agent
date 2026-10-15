@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -63,7 +64,7 @@ func (s *Service) refresh() {
 	defer cancel()
 	now := time.Now().UTC()
 	snapshot := model.Snapshot{
-		SchemaVersion: model.SchemaVersion, Timestamp: now, Host: model.Host{Hostname: s.hostname},
+		SchemaVersion: model.SchemaVersion, Timestamp: now, Host: hostInfo(s.hostname),
 		Filesystems: []model.Filesystem{}, Disks: []model.Disk{}, Errors: []model.CollectorError{},
 		CollectorInfo: make(map[string]model.CollectorStatus, len(s.collectors)),
 	}
@@ -132,6 +133,19 @@ func (s *Service) refresh() {
 	s.inflight = nil
 	s.mu.Unlock()
 	close(done)
+}
+
+func hostInfo(hostname string) model.Host {
+	host := model.Host{Hostname: hostname, OS: runtime.GOOS, Architecture: runtime.GOARCH, SystemMountpoint: "/"}
+	if runtime.GOOS == "windows" {
+		drive := os.Getenv("SystemDrive")
+		if drive == "" {
+			drive = "C:"
+		}
+		host.SystemMountpoint = drive + `\`
+		host.UnsupportedMetrics = []string{"load", "cpu.perCore", "memory.freeBytes", "memory.cachedBytes", "memory.buffersBytes", "memory.swapTotalBytes", "memory.swapFreeBytes", "filesystem.files", "filesystem.filesFree", "disk.ioSeconds", "disk.weightedIOSeconds"}
+	}
+	return host
 }
 
 func (s *Service) Ready(snapshot model.Snapshot) bool {

@@ -17,6 +17,7 @@ import (
 	"sma/internal/config"
 	"sma/internal/discovery"
 	"sma/internal/metric"
+	"sma/internal/securefile"
 	"sma/internal/snapshot"
 )
 
@@ -46,12 +47,8 @@ func New(cfg config.Config, service *snapshot.Service, discoveryService *discove
 		if len(data) > 4096 {
 			return nil, errors.New("auth token exceeds 4096 bytes")
 		}
-		info, err := os.Stat(cfg.AuthTokenFile)
-		if err != nil {
-			return nil, fmt.Errorf("stat auth token file: %w", err)
-		}
-		if info.Mode().Perm()&0o077 != 0 {
-			return nil, errors.New("auth token file must not be accessible by group or others")
+		if err := securefile.Check(cfg.AuthTokenFile); err != nil {
+			return nil, fmt.Errorf("auth token permissions: %w", err)
 		}
 		token = strings.TrimSpace(string(data))
 		if token == "" {

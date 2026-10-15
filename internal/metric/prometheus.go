@@ -20,6 +20,7 @@ type encoder struct{ bytes.Buffer }
 
 func Prometheus(snapshot model.Snapshot, build buildinfo.Info, stats AgentStats) []byte {
 	e := &encoder{}
+	windows := snapshot.Host.OS == "windows"
 	e.family("sma_build_info", "Build information for the server monitor agent.", "gauge")
 	e.sample("sma_build_info", map[string]string{"version": build.Version, "revision": build.Revision, "go_version": build.GoVersion}, 1)
 	e.family("sma_scrapes_total", "Total number of Prometheus scrapes.", "counter")
@@ -53,6 +54,9 @@ func Prometheus(snapshot model.Snapshot, build buildinfo.Info, stats AgentStats)
 			{"sma_memory_swap_free_bytes", "Unused swap memory in bytes.", m.SwapFreeBytes},
 		}
 		for _, item := range memory {
+			if windows && item.name != "sma_memory_total_bytes" && item.name != "sma_memory_available_bytes" {
+				continue
+			}
 			e.family(item.name, item.help, "gauge")
 			e.sample(item.name, nil, float64(item.value))
 		}
@@ -78,8 +82,8 @@ func Prometheus(snapshot model.Snapshot, build buildinfo.Info, stats AgentStats)
 		e.family("sma_boot_time_seconds", "Unix time at which the system booted.", "gauge")
 		e.sample("sma_boot_time_seconds", nil, *snapshot.BootTime)
 	}
-	encodeFilesystems(e, snapshot.Filesystems)
-	encodeDisks(e, snapshot.Disks)
+	encodeFilesystems(e, snapshot.Filesystems, windows)
+	encodeDisks(e, snapshot.Disks, windows)
 
 	e.family("sma_collector_duration_seconds", "Duration of the latest collection by collector.", "gauge")
 	e.family("sma_collector_success", "Whether the latest collection succeeded.", "gauge")
@@ -95,7 +99,7 @@ func Prometheus(snapshot model.Snapshot, build buildinfo.Info, stats AgentStats)
 	return e.Bytes()
 }
 
-func encodeFilesystems(e *encoder, filesystems []model.Filesystem) {
+func encodeFilesystems(e *encoder, filesystems []model.Filesystem, windows bool) {
 	type def struct {
 		name, help string
 		value      func(model.Filesystem) float64
@@ -114,6 +118,9 @@ func encodeFilesystems(e *encoder, filesystems []model.Filesystem) {
 		}},
 	}
 	for _, d := range defs {
+		if windows && (d.name == "sma_filesystem_files" || d.name == "sma_filesystem_files_free") {
+			continue
+		}
 		e.family(d.name, d.help, "gauge")
 		for _, fs := range filesystems {
 			e.sample(d.name, map[string]string{"device": fs.Device, "mountpoint": fs.Mountpoint, "fstype": fs.FilesystemType}, d.value(fs))
@@ -121,7 +128,7 @@ func encodeFilesystems(e *encoder, filesystems []model.Filesystem) {
 	}
 }
 
-func encodeDisks(e *encoder, disks []model.Disk) {
+func encodeDisks(e *encoder, disks []model.Disk, windows bool) {
 	type def struct {
 		name, help, kind string
 		value            func(model.Disk) float64
@@ -138,6 +145,9 @@ func encodeDisks(e *encoder, disks []model.Disk) {
 		{"sma_disk_io_weighted_seconds_total", "Weighted seconds spent doing disk I/O.", "counter", func(v model.Disk) float64 { return v.WeightedIOSeconds }},
 	}
 	for _, d := range defs {
+		if windows && (d.name == "sma_disk_io_seconds_total" || d.name == "sma_disk_io_weighted_seconds_total") {
+			continue
+		}
 		e.family(d.name, d.help, d.kind)
 		for _, disk := range disks {
 			e.sample(d.name, map[string]string{"device": disk.Device}, d.value(disk))

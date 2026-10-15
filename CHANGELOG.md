@@ -1,5 +1,11 @@
 # 变更记录
 
+## Windows v0.3.0-rc.1
+
+- Windows x64 原生指标、服务、MSI、完整验证 ZIP，附安装、诊断、Token、升级和卸载工具。
+- 新增主机平台、系统盘、不支持字段，保持 v1 API；Linux 持续回归。
+- Windows CI 验证，用户 Windows 10 LTSC 验收待完成，预览包未签名。
+
 ## v0.2.3
 
 - 统一源码文档目录与维护约定，新增 sma-center 连通性排障和真实恢复案例。

@@ -1,5 +1,7 @@
 # SMA 自动安装方案
 
+本页的 `latest.txt` 和脚本仅服务 Linux；Windows 预览使用独立 MSI/ZIP、`checksums-windows.txt`，不覆盖 Linux 稳定索引，操作见 [Windows 指南](windows/README.md)。
+
 ## 目录约定
 
 在 SFTPGo 公共分享根目录放置以下文件：
