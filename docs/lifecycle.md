@@ -69,7 +69,7 @@ OpenRC 新包把服务输出写入 `/var/log/sma.log`，systemd 使用 journal�
 ```sh
 sudo sma-ctl upgrade
 # 指定版本（须仍在共享目录的 checksums.txt 中）：
-sudo sma-ctl upgrade --version 0.2.1
+sudo sma-ctl upgrade --version 0.2.2
 ```
 
 升级沿用配置和 Token。安装包管理器错误、下载失败、哈希不匹配或启动失败均返回非零退出码；失败日志保存在 `/var/log/sma-install.log`。下载失败不会开始安装该包。

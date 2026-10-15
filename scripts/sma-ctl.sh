@@ -144,7 +144,12 @@ service_action() {
     manager || return 1
     if [ "$service_manager" = systemd ]; then
         case "$1" in
-            enable|disable) systemctl "$1" sma.service ;;
+            start|restart)
+                # Explicit maintenance/recovery should work even after failed
+                # binds or rapid operations hit systemd's start rate limit.
+                systemctl reset-failed sma.service || return 1
+                systemctl "$1" sma.service
+                ;;
             *) systemctl "$1" sma.service ;;
         esac
     else
