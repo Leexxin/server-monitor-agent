@@ -32,10 +32,14 @@ jobs:
         run: |
           sh scripts/test-lifecycle.sh
           sh scripts/test-procd.sh
+          if grep -nE '^[[:space:]]*install[[:space:]]' packaging/universal/install.sh scripts/install-sma.sh; then
+            echo 'Runtime installer must not require the optional install utility.' >&2
+            exit 1
+          fi
 
       - name: Validate release and installer scripts
         run: |
-          sh -n scripts/install-sma.sh scripts/prepare-share.sh scripts/publish-share.sh scripts/deploy-share.sh scripts/test-auto-installer-linux.sh scripts/test-share-publisher.sh
+          sh -n packaging/universal/install.sh scripts/install-sma.sh scripts/prepare-share.sh scripts/publish-share.sh scripts/deploy-share.sh scripts/test-auto-installer-linux.sh scripts/test-universal-linux.sh scripts/test-share-publisher.sh
           python3 -m py_compile scripts/test-share-server.py
 
       - name: Test with race detector
