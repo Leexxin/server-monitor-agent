@@ -20,6 +20,8 @@
 
 Windows 预览使用 `windows-v*` 标签、独立 Windows 工作流与校验清单，避免改变 Linux `latest.txt`。Windows 文档位于 `docs/windows/`；MSI/ZIP 包含完整 docs，Linux 原生及通用包也同步文档。Windows Server 2022 CI 不能代替 Windows 10/11/其他 Server 用户验证，真实重启需人工验收。
 
+同一 Windows 标签的重复任务串行执行，完整已发布的三个制品不覆盖；已有 Release 不完整时明确报错，需核对原因后处理，不能通过重建覆盖已交付版本。
+
 1. 检查工作区、同步远端，保护已有修改；按 CONTRIBUTING.md 创建分支和 PR。
 2. 在同一提交维护功能说明和操作文档，示例使用占位凭据。历史事故明确日期、证据、恢复方式和未验证项。
 3. 文档改动检查链接与 `git diff --check`；行为改动运行相应测试。禁止在生产执行破坏性的安装卸载测试。

@@ -2,6 +2,8 @@
 
 本页的 `latest.txt` 和脚本仅服务 Linux；Windows 预览使用独立 MSI/ZIP、`checksums-windows.txt`，不覆盖 Linux 稳定索引，操作见 [Windows 指南](windows/README.md)。
 
+Windows 交互安装优先 MSI 与 GUI；无人值守继续使用带参数的 PowerShell 或 `/qn`，静默安装不自动弹出 GUI。
+
 ## 目录约定
 
 在 SFTPGo 公共分享根目录放置以下文件：

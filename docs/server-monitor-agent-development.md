@@ -1,5 +1,15 @@
 # 轻量级服务器监控 Agent 开发文档
 
+Windows GUI 代码位于 `windows/gui/`，使用系统 Windows Forms/.NET Framework 4.7.2+，调用同包 `sma-ctl` 与固定 PowerShell 文件管理 SCM、配置及限定防火墙；本机 HTTP 请求禁代理与重定向。凭据不经过命令行参数，不写 GUI 日志，GUI 关闭不停止 Go 服务。MSI/GUI 维护使用独立临时进程避免文件锁，所有 UI/后端操作有结果或错误反馈。界面与旧包升级由 Windows CI 验证，GUI 实机体验另行验收。
+
+GUI 由 Windows 自带 Framework64 C# 编译器构建，脚本显式传入完整源码路径并使用 UTF-8，避免旧编译器对子目录通配符路径的不同解释。最终构建必须在 Windows CI 验证。
+
+中文 UI 通过 WiX 本地化交付，MSI 产品识别语言保持与首版一致，确保固定 UpgradeCode 的旧版能被识别并升级；不要直接改变产品语言来本地化界面。
+
+自定义 MSI UI 必须通过 Windows Installer ICE 校验，普通安装和管理镜像序列均提供完成对话框；管理镜像提取不启动 GUI。
+
+GUI 布局需为原生按钮保留完整高度，压缩首屏时不通过裁切控件换取空间；通过实际渲染截图及首屏主操作可见性检查。
+
 Windows x64 首版现采用相同仓库、共享 HTTP/快照/鉴权、按 Go 构建约束分离采集器及运行入口。通过 x/sys 固定依赖调用 Windows API 和 SCM，原生服务、管理工具、MSI/PowerShell 安装与 Windows CI 配套维护，详细范围和限制见 [Windows 开发说明](windows/README.md#构建和发布)。下文 Linux 设计继续适用。
 
 > 文档状态：Draft v0.1

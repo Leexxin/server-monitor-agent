@@ -2,6 +2,8 @@
 
 本页为 Linux 操作；Windows MSI 和管理命令见 [Windows 全生命周期](windows/README.md#生命周期操作)。
 
+Windows 新版也可直接从开始菜单“SMA 管理中心”执行上述管理，无需命令行；升级和卸载有独立结果窗口。
+
 从本次更新起，自动安装和新构建的标准包提供 `sma-ctl`。命令需要 root 权限；直接执行 `sma-ctl` 查看帮助。若 PATH 不包含 `/usr/local/bin`，使用完整路径 `/opt/sma/bin/sma-ctl`。
 
 ## 1. 安装及旧安装补齐

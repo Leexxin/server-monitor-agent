@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <Property Id="SMA_OPEN_GUI" Value="1" />
+    <Property Id="WixShellExecTarget" Value="[#GuiExe]" />
+    <CustomAction Id="LaunchGui" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" Return="ignore" />
+    <UI Id="SmaInstallerUI">
+      <TextStyle Id="WixUI_Font_Normal" FaceName="Microsoft YaHei UI" Size="9" />
+      <TextStyle Id="WixUI_Font_Bigger" FaceName="Microsoft YaHei UI" Size="14" />
+      <TextStyle Id="WixUI_Font_Title" FaceName="Microsoft YaHei UI" Size="10" Bold="yes" />
+      <Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
+      <DialogRef Id="ErrorDlg" /><DialogRef Id="FatalError" /><DialogRef Id="UserExit" />
+      <DialogRef Id="FilesInUse" /><DialogRef Id="MsiRMFilesInUse" /><DialogRef Id="ProgressDlg" />
+      <Dialog Id="SmaWelcome" Width="400" Height="285" Title="SMA 安装向导" NoMinimize="yes">
+        <Control Id="Title" Type="Text" X="24" Y="22" Width="350" Height="30" Text="{\WixUI_Font_Bigger}欢迎安装 SMA" />
+        <Control Id="Details" Type="Text" X="24" Y="65" Width="350" Height="110" Text="安装程序将安装监控服务和 SMA 管理中心。&#13;&#10;&#13;&#10;完成后可直接查看运行状态、配置远程接入、复制 Token、诊断和管理服务。配置与凭据在升级时保留。&#13;&#10;&#13;&#10;安装需要管理员权限。" />
+        <Control Id="Path" Type="Text" X="24" Y="188" Width="350" Height="30" Text="程序：[ProgramFiles64Folder]SMA&#13;&#10;数据：[CommonAppDataFolder]SMA" />
+        <Control Id="Install" Type="PushButton" X="213" Y="246" Width="78" Height="23" Default="yes" Text="安装 / 继续"><Publish Event="EndDialog" Value="Return">1</Publish></Control>
+        <Control Id="Cancel" Type="PushButton" X="301" Y="246" Width="75" Height="23" Cancel="yes" Text="取消"><Publish Event="EndDialog" Value="Exit">1</Publish></Control>
+      </Dialog>
+      <Dialog Id="SmaDone" Width="400" Height="285" Title="SMA 安装完成" NoMinimize="yes">
+        <Control Id="Title" Type="Text" X="24" Y="22" Width="350" Height="30" Text="{\WixUI_Font_Bigger}SMA 操作已完成" />
+        <Control Id="Details" Type="Text" X="24" Y="65" Width="350" Height="96" Text="安装完成后，打开 SMA 管理中心确认服务状态并完成接入。&#13;&#10;&#13;&#10;以后可从开始菜单 → SMA → SMA 管理中心打开。&#13;&#10;&#13;&#10;默认仅本机监听；请在管理中心设置远程接入与允许来源。">
+          <Condition Action="hide">REMOVE~="ALL"</Condition>
+        </Control>
+        <Control Id="Removed" Type="Text" X="24" Y="65" Width="350" Height="90" Text="SMA 程序已卸载。默认配置与 Token 保留在 ProgramData\SMA。&#13;&#10;&#13;&#10;完整清理请使用管理中心的卸载并清除数据功能或卸载脚本。"><Condition Action="hide">NOT REMOVE~="ALL"</Condition></Control>
+        <Control Id="Open" Type="CheckBox" X="24" Y="190" Width="340" Height="22" Property="SMA_OPEN_GUI" CheckBoxValue="1" Text="完成后打开 SMA 管理中心"><Condition Action="hide">REMOVE~="ALL"</Condition></Control>
+        <Control Id="Finish" Type="PushButton" X="299" Y="246" Width="77" Height="23" Default="yes" Cancel="yes" Text="完成">
+          <Publish Event="DoAction" Value="LaunchGui" Order="1">SMA_OPEN_GUI = "1" AND NOT REMOVE~="ALL" AND ACTION &lt;&gt; "ADMIN"</Publish>
+          <Publish Event="EndDialog" Value="Return" Order="2">1</Publish>
+        </Control>
+      </Dialog>
+      <InstallUISequence>
+        <Show Dialog="SmaWelcome" Sequence="1290">NOT REMOVE~="ALL"</Show>
+        <Show Dialog="ProgressDlg" Sequence="1299">1</Show>
+        <Show Dialog="SmaDone" OnExit="success" />
+        <Show Dialog="FatalError" OnExit="error" />
+        <Show Dialog="UserExit" OnExit="cancel" />
+      </InstallUISequence>
+      <AdminUISequence>
+        <Show Dialog="SmaDone" OnExit="success" />
+      </AdminUISequence>
+    </UI>
+    <UIRef Id="WixUI_Common" />
+  </Fragment>
+</Wix>
