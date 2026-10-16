@@ -3,7 +3,7 @@ set -eu
 
 if [ "$(id -u)" -ne 0 ]; then
     echo "ERROR: SMA must be installed as root." >&2
-    echo "Run: sudo ./install.sh" >&2
+    echo "Run as root (use sudo where available): sh ./install.sh" >&2
     exit 1
 fi
 
@@ -14,6 +14,30 @@ case "$(uname -s)" in
     Linux) ;;
     *) echo "ERROR: SMA supports Linux only." >&2; exit 1 ;;
 esac
+
+if [ -r /etc/rc.common ] && { command -v procd >/dev/null 2>&1 || [ -x /sbin/procd ]; }; then
+    # OpenWrt images commonly omit account-management utilities. Install only
+    # the missing tools; never edit /etc/passwd or run the agent as root.
+    need_group=0
+    need_user=0
+    if ! grep -q '^sma:' /etc/group 2>/dev/null && ! command -v groupadd >/dev/null 2>&1 && ! command -v addgroup >/dev/null 2>&1; then need_group=1; fi
+    if ! id sma >/dev/null 2>&1 && ! command -v useradd >/dev/null 2>&1 && ! command -v adduser >/dev/null 2>&1; then need_user=1; fi
+    if [ "$need_group" -eq 1 ] || [ "$need_user" -eq 1 ]; then
+        if command -v opkg >/dev/null 2>&1; then
+            opkg update
+            if [ "$need_group" -eq 1 ]; then opkg install shadow-groupadd; fi
+            if [ "$need_user" -eq 1 ]; then opkg install shadow-useradd; fi
+        fi
+        if [ "$need_group" -eq 1 ] && ! command -v groupadd >/dev/null 2>&1 && ! command -v addgroup >/dev/null 2>&1; then
+            echo 'ERROR: Install shadow-groupadd before installing SMA.' >&2
+            exit 1
+        fi
+        if [ "$need_user" -eq 1 ] && ! command -v useradd >/dev/null 2>&1 && ! command -v adduser >/dev/null 2>&1; then
+            echo 'ERROR: Install shadow-useradd before installing SMA.' >&2
+            exit 1
+        fi
+    fi
+fi
 
 install -d -m 0755 "$install_root/bin" "$install_root/docs" "$install_root/discovery" "$install_root/discovery/scripts"
 install -d -m 0750 "$install_root/config"
@@ -71,8 +95,8 @@ mkdir -p /usr/local/bin
 if [ ! -e /usr/local/bin/sma-ctl ] && [ ! -L /usr/local/bin/sma-ctl ]; then
     ln -s "$install_root/bin/sma-ctl" /usr/local/bin/sma-ctl
 fi
-echo 'SMA 管理：sudo /opt/sma/bin/sma-ctl help'
-echo '查看 Bearer Token：sudo /opt/sma/bin/sma-ctl token show'
+echo 'SMA 管理（root）：/opt/sma/bin/sma-ctl help'
+echo '查看 Bearer Token（root）：/opt/sma/bin/sma-ctl token show'
 
 if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
     install -m 0644 "$script_dir/sma.service" /etc/systemd/system/sma.service
@@ -85,6 +109,11 @@ elif command -v rc-update >/dev/null 2>&1; then
     rc-update add sma default >/dev/null 2>&1 || true
     rc-service sma restart >/dev/null 2>&1 || true
     echo "SMA installed. Check it with: rc-service sma status"
+elif [ -r /etc/rc.common ] && { command -v procd >/dev/null 2>&1 || [ -x /sbin/procd ]; }; then
+    install -m 0755 "$script_dir/sma.procd" /etc/init.d/sma
+    /etc/init.d/sma enable
+    /etc/init.d/sma restart
+    echo "SMA installed. Check it with: /etc/init.d/sma status"
 else
     echo "SMA installed in /opt/sma. Start it manually: /opt/sma/bin/sma"
 fi

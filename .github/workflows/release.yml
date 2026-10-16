@@ -55,6 +55,7 @@ jobs:
         run: |
           go test ./...
           sh scripts/test-lifecycle.sh
+          sh scripts/test-procd.sh
 
       - name: Build packages
         env:

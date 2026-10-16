@@ -10,7 +10,7 @@ SHOW_TOKEN=0
 
 usage() {
     cat <<'EOF'
-Usage: sudo sh install-sma.sh [--version VERSION] [--force] [--show-token]
+Usage: sh install-sma.sh [--version VERSION] [--force] [--show-token]  # run as root
 
 Options:
   --version VERSION  Install this version instead of latest.txt (its files must
@@ -40,7 +40,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ "$(id -u)" -ne 0 ]; then
-    echo 'ERROR: SMA installation requires root. Run: sudo sh install-sma.sh' >&2
+    echo 'ERROR: SMA installation requires root. Run as root (use sudo where available).' >&2
     exit 1
 fi
 [ "$(uname -s)" = Linux ] || { echo 'ERROR: Linux is required.' >&2; exit 1; }
@@ -102,8 +102,10 @@ if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
     service_manager=systemd
 elif command -v rc-update >/dev/null 2>&1 && command -v rc-service >/dev/null 2>&1; then
     service_manager=openrc
+elif [ -r /etc/rc.common ] && { command -v procd >/dev/null 2>&1 || [ -x /sbin/procd ]; }; then
+    service_manager=procd
 else
-    fatal 'No supported service manager found (systemd or OpenRC). Cannot configure autostart.'
+    fatal 'No supported service manager found (systemd, OpenRC or procd). Cannot configure autostart.'
 fi
 
 machine=$(uname -m)
@@ -122,6 +124,7 @@ if [ -r /etc/os-release ]; then
     os_like=${ID_LIKE:-}
 fi
 case " $os_id $os_like " in
+    *' openwrt '*|*' istoreos '*) package_kind=tar ;;
     *' alpine '*) package_kind=apk ;;
     *' debian '*|*' ubuntu '*) package_kind=deb ;;
     *' rhel '*|*' fedora '*|*' centos '*|*' rocky '*|*' almalinux '*|*' ol '*|*' suse '*|*' opensuse '*) package_kind=rpm ;;
@@ -217,23 +220,32 @@ elif [ "$(readlink /usr/local/bin/sma-ctl 2>/dev/null || true)" != /opt/sma/bin/
 fi
 run_logged /opt/sma/bin/sma-ctl prepare-auth
 
-if [ "$service_manager" = systemd ]; then
-    run_logged systemctl daemon-reload
-    run_logged systemctl enable sma.service
-    run_logged systemctl restart sma.service
-    run_logged systemctl is-active --quiet sma.service
-    run_logged systemctl is-enabled --quiet sma.service
-else
-    run_logged rc-update add sma default
-    run_logged rc-service sma restart
-    run_logged rc-service sma status
-fi
+case "$service_manager" in
+    systemd)
+        run_logged systemctl daemon-reload
+        run_logged systemctl enable sma.service
+        run_logged systemctl restart sma.service
+        run_logged systemctl is-active --quiet sma.service
+        run_logged systemctl is-enabled --quiet sma.service
+        ;;
+    openrc)
+        run_logged rc-update add sma default
+        run_logged rc-service sma restart
+        run_logged rc-service sma status
+        ;;
+    procd)
+        run_logged /etc/init.d/sma enable
+        run_logged /etc/init.d/sma restart
+        run_logged /etc/init.d/sma status
+        run_logged /etc/init.d/sma enabled
+        ;;
+esac
 log "SMA $version installed and enabled at boot. Log: $LOG_FILE"
 run_logged /opt/sma/bin/sma-ctl config show
-log '管理：sudo /opt/sma/bin/sma-ctl help'
-log '查看 Token：sudo /opt/sma/bin/sma-ctl token show'
-log '检查状态：sudo /opt/sma/bin/sma-ctl status'
-log '卸载：sudo /opt/sma/bin/sma-ctl uninstall'
+log '管理（root）：/opt/sma/bin/sma-ctl help'
+log '查看 Token（root）：/opt/sma/bin/sma-ctl token show'
+log '检查状态（root）：/opt/sma/bin/sma-ctl status'
+log '卸载（root）：/opt/sma/bin/sma-ctl uninstall'
 if [ "$SHOW_TOKEN" -eq 1 ]; then
     # Deliberately outside log()/run_logged(): never persist the secret to our log.
     printf '\nBearer Token（仅本次标准输出，请妥善保存）：\n'

@@ -14,6 +14,12 @@ license: Proprietary
 umask: 0o022
 
 contents:
+  - src: docs/releases/v0.2.4.md
+    dst: /opt/sma/docs/releases/v0.2.4.md
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
   - src: docs/releases/windows-v0.3.1-rc.1.md
     dst: /opt/sma/docs/releases/windows-v0.3.1-rc.1.md
     file_info:

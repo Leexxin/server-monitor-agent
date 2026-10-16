@@ -21,6 +21,8 @@ sudo sh install-sma.sh --show-token
 
 旧版本自动安装没有生成 Token，因此不存在通用的默认密码。更新脚本后重新运行即可补齐。
 
+iStoreOS/OpenWrt 已登录 root 时不需要 `sudo`：运行 `sh install-sma.sh --show-token`，之后使用 `/opt/sma/bin/sma-ctl status`、`token show`、`logs 100`、`uninstall`。procd 服务为 `/etc/init.d/sma`，日志通过 `logread` 查看；`sma-ctl logs` 会显示最近的系统日志（不只 SMA）。请先确认 `/opt` 可写、有足够空间、CPU 为 x86_64 或 aarch64；不支持 32 位、MIPS 等架构。通用包依赖 `sma` 系统用户，缺少账户管理命令时安装器会尝试通过 `opkg` 安装对应 shadow 工具，离线环境需预先准备。
+
 ## 2. 验收及外部接入
 
 ```sh
@@ -67,6 +69,8 @@ unset SMA_TOKEN
 Token 更换后客户端必须更新凭据。重启失败时工具恢复旧 Token 并尝试恢复服务。用户手工修改 Token 文件后同样需要重启。升级不应改变已有 Token；新安装脚本还会修正旧包把 Token 属主变成 root 的问题。
 
 OpenRC 新包把服务输出写入 `/var/log/sma.log`，systemd 使用 journal。旧版 OpenRC 包可能没有服务日志文件，升级后生效。
+
+procd 将标准输出和错误送入 OpenWrt 系统日志，使用 `logread` 排查。OpenWrt 设备需要从 sma-center 远程读取时，仍需将默认 `127.0.0.1:9108` 改为设备内网地址，并放行对应来源；Token 不会自动写回 sma-center，需由管理员通过 `sma-ctl token show` 获取并配置到平台。
 
 ## 4. 升级及恢复
 
