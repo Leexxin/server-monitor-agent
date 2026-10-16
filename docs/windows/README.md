@@ -41,7 +41,7 @@ Token 默认不展示，不落 GUI 日志；显示后 30 秒自动隐藏。复�
 
 ## 安装和接入
 
-下载 ZIP 和发布的 `checksums-windows.txt`，通过 `Get-FileHash .\sma_0.3.0-rc.1_windows_amd64.zip -Algorithm SHA256` 核对发布值。解压后，以管理员身份打开 64 位 PowerShell，进入解压目录：
+下载 ZIP 和发布的 `checksums-windows.txt`，通过 `Get-FileHash .\sma_0.3.1-rc.1_windows_amd64.zip -Algorithm SHA256` 核对发布值。解压后，以管理员身份打开 64 位 PowerShell，进入解压目录：
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass -Force
@@ -88,7 +88,7 @@ $ctl = "$env:ProgramFiles\SMA\sma-ctl.exe"
 
 管理操作需提升权限。监听修改失败尝试恢复旧配置并重启；Token 轮换失败尝试恢复旧 Token。恢复失败会返回合并错误，需查日志处理。`config listen` 不修改防火墙；更换端口后再用安装脚本 `-AllowedSource` 更新规则。`doctor` 检查配置、Token 权限、就绪和鉴权，局部采集错误打印 WARNING。诊断 HTTP 禁用代理和重定向。
 
-升级运行新 ZIP 的安装脚本；固定 MSI UpgradeCode、禁止降级、使用 Windows Installer 事务。升级前安全备份旧 MSI 和配置。预览包 MSI 三段版本为 `0.3.0`，下一次可升级制品必须提高三段版本，不能用相同 MSI 版本发布不同包来模拟升级。
+升级可从管理中心选择 MSI，或运行新 ZIP 的安装脚本；固定 MSI UpgradeCode、禁止降级、使用 Windows Installer 事务。升级前安全备份旧 MSI 和配置。本次 MSI 三段版本为 `0.3.1`，下一次可升级制品必须提高三段版本，不能用相同 MSI 版本发布不同包来模拟升级。
 
 在解压目录卸载，避免脚本执行中被移除：
 
@@ -128,7 +128,7 @@ Mac：`make check`、`CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build ./...`。
 
 Windows 工作流执行原生测试、PowerShell 5.1 语法检查、MSI 构建、Windows Server 2022 runner 生命周期测试，覆盖远程监听设置、限定防火墙来源和卸载规则清理。`windows-v*` 标签发布预览包；Linux 发布和稳定版索引独立。CI 验证自启配置，不重启 runner。用户 LTSC、Windows 11 和其他 Server 版本待分别验证。
 
-制品未做 Authenticode 签名，可能提示未知发布者。发布范围见 [预览版说明](../releases/windows-v0.3.0-rc.1.md)。
+制品未做 Authenticode 签名，可能提示未知发布者。发布范围见 [GUI 预览版说明](../releases/windows-v0.3.1-rc.1.md)，[首版说明](../releases/windows-v0.3.0-rc.1.md)仅供历史参考。
 
 ## 第三方许可
 
