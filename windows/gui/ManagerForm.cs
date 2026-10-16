@@ -98,7 +98,7 @@ namespace SmaManager {
             Add(page,Note("1. 选择调用方能够访问的本机 IP。  2. 复制 Agent URL。  3. 到“连接与 Token”复制凭据。"),32);
             host.DropDownStyle=ComboBoxStyle.DropDownList;host.Width=210; host.AccessibleName="用于对接的本机 IP";
             host.SelectedIndexChanged+=delegate { UpdateUrl(); };
-            Add(page,Actions(host,Button("刷新本机 IP",delegate { LoadAddresses(); return Task.FromResult(0); })),44);
+            Add(page,Actions(host,Button("刷新本机 IP",delegate { LoadAddresses(); return Task.FromResult(0); })),48);
             url.ReadOnly=true;url.Font=new Font("Consolas",12);url.AccessibleName="Agent URL";Add(page,url,38);
             var copyUrl=Button("复制 Agent URL",delegate { if(url.Text.Length>0) Clipboard.SetText(url.Text); footer.Text="已复制 Agent URL。";return Task.FromResult(0); },true);copyUrl.Name="CopyAgentUrl";
             Add(page,Actions(copyUrl,Button("配置连接与 Token",delegate {tabs.SelectedIndex=1;return Task.FromResult(0);}),Button("重新检查",RefreshStatus)),48);
