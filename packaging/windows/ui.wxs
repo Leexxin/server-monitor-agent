@@ -26,7 +26,7 @@
         <Control Id="Removed" Type="Text" X="24" Y="65" Width="350" Height="90" Text="SMA 程序已卸载。默认配置与 Token 保留在 ProgramData\SMA。&#13;&#10;&#13;&#10;完整清理请使用管理中心的卸载并清除数据功能或卸载脚本。"><Condition Action="hide">NOT REMOVE~="ALL"</Condition></Control>
         <Control Id="Open" Type="CheckBox" X="24" Y="190" Width="340" Height="22" Property="SMA_OPEN_GUI" CheckBoxValue="1" Text="完成后打开 SMA 管理中心"><Condition Action="hide">REMOVE~="ALL"</Condition></Control>
         <Control Id="Finish" Type="PushButton" X="299" Y="246" Width="77" Height="23" Default="yes" Cancel="yes" Text="完成">
-          <Publish Event="DoAction" Value="LaunchGui" Order="1">SMA_OPEN_GUI = "1" AND NOT REMOVE~="ALL"</Publish>
+          <Publish Event="DoAction" Value="LaunchGui" Order="1">SMA_OPEN_GUI = "1" AND NOT REMOVE~="ALL" AND ACTION &lt;&gt; "ADMIN"</Publish>
           <Publish Event="EndDialog" Value="Return" Order="2">1</Publish>
         </Control>
       </Dialog>
@@ -37,6 +37,9 @@
         <Show Dialog="FatalError" OnExit="error" />
         <Show Dialog="UserExit" OnExit="cancel" />
       </InstallUISequence>
+      <AdminUISequence>
+        <Show Dialog="SmaDone" OnExit="success" />
+      </AdminUISequence>
     </UI>
     <UIRef Id="WixUI_Common" />
   </Fragment>
