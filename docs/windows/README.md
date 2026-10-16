@@ -25,7 +25,7 @@ Token 默认不展示，不落 GUI 日志；显示后 30 秒自动隐藏。复�
 
 图形界面使用 Windows Forms 和系统 .NET Framework 4.7.2+，只在打开时运行；Windows 10 LTSC 19044 通常已具备，缺失时 MSI 会提示。Go Agent 不引入 GUI 常驻进程、Electron 或 WebView 运行时。Server Core 等无桌面环境继续使用命令行。GUI 和 MSI 未签名，仍可能提示未知发布者。
 
-界面开启时每 4 秒后台刷新状态，自动刷新不禁用操作、不反复弹窗或闪烁进度条；手动操作显示进行中与明确结果。首次 CPU 需要第二次采样。
+界面开启时每 4 秒后台刷新状态，自动刷新不禁用操作、不反复弹窗或闪烁进度条；手动操作显示进行中与明确结果，剪贴板等系统操作失败也会显示具体错误并保留到诊断页面。首次 CPU 需要第二次采样。
 
 若从 CMD 或受执行策略限制的 PowerShell 运行旧脚本，应显式 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File ...`；推荐直接使用新版 MSI 和管理界面，避免 `.ps1` 文件关联打开编辑器。
 

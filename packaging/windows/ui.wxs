@@ -9,7 +9,6 @@
       <TextStyle Id="WixUI_Font_Bigger" FaceName="Microsoft YaHei UI" Size="14" />
       <TextStyle Id="WixUI_Font_Title" FaceName="Microsoft YaHei UI" Size="10" Bold="yes" />
       <Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
-      <Property Id="ErrorDialog" Value="ErrorDlg" />
       <DialogRef Id="ErrorDlg" /><DialogRef Id="FatalError" /><DialogRef Id="UserExit" />
       <DialogRef Id="FilesInUse" /><DialogRef Id="MsiRMFilesInUse" /><DialogRef Id="ProgressDlg" />
       <Dialog Id="SmaWelcome" Width="400" Height="285" Title="SMA 安装向导" NoMinimize="yes">

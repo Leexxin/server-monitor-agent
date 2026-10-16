@@ -74,7 +74,7 @@ namespace SmaManager {
         Button Button(string text,Func<Task> action,bool primary=false) {
             var button=new Button { Text=text,AutoSize=true,MinimumSize=new Size(110,36),Height=36,Padding=new Padding(10,3,10,3),FlatStyle=FlatStyle.Flat,Margin=new Padding(0,0,10,8),BackColor=primary?Accent:Color.White,ForeColor=primary?Color.White:Ink,AccessibleName=text };
             button.FlatAppearance.BorderColor=primary?Accent:Color.FromArgb(197,210,214);
-            button.Click+=async delegate { await action(); }; return button;
+            button.Click+=async delegate { try{await action();}catch(Exception error){Error(error);} }; return button;
         }
         FlowLayoutPanel Actions(params Control[] controls) {
             var row=new FlowLayoutPanel { Dock=DockStyle.Fill,WrapContents=true,AutoScroll=false }; row.Controls.AddRange(controls); return row;
@@ -222,7 +222,7 @@ namespace SmaManager {
         Task Uninstall(bool purge){if(Confirm(purge?"永久删除默认配置、Token 和运行日志，并卸载 SMA？此操作不能撤销，请先备份。":"卸载 SMA 服务和程序？配置、Token 和运行日志将保留。")){try{Maintenance.Launch(purge?"purge":"uninstall","");Close();}catch(Exception e){Error(e);}}return Task.FromResult(0);}
         bool Confirm(string message){return MessageBox.Show(this,message,"请确认",MessageBoxButtons.YesNo,MessageBoxIcon.Warning,MessageBoxDefaultButton.Button2)==DialogResult.Yes;}
         void OpenFolder(string path){try{if(!Directory.Exists(path))throw new DirectoryNotFoundException("目录尚不存在："+path);System.Diagnostics.Process.Start("explorer.exe",AgentClient.Quote(path));}catch(Exception e){Error(e);}}
-        void Error(Exception e){string text=AgentClient.Redact(e.Message);banner.Text="操作未完成："+text;footer.Text="请到日志与诊断查看详情。";MessageBox.Show(this,text,"操作未完成",MessageBoxButtons.OK,MessageBoxIcon.Error);}
+        void Error(Exception e){string text=AgentClient.Redact(e.Message);output.Text=text;banner.Text="操作未完成："+text;footer.Text="请到日志与诊断查看详情。";MessageBox.Show(this,text,"操作未完成",MessageBoxButtons.OK,MessageBoxIcon.Error);}
         async Task<bool> Work(string message,Func<Task> action){if(busy)return false;busy=true;tabs.Enabled=false;progress.Visible=true;footer.Text=message;try{await action();if(footer.Text==message)footer.Text="操作完成 · "+DateTime.Now.ToString("HH:mm:ss");return true;}catch(Exception e){if(TestDirectory!=null)throw;Error(e);return false;}finally{busy=false;tabs.Enabled=true;progress.Visible=false;}}
 
         async Task SelfTest(){
