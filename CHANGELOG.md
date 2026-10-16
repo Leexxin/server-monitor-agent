@@ -1,5 +1,11 @@
 # 变更记录
 
+## Windows v0.3.1-rc.1
+
+- 中文 MSI 向导、完成页和开始菜单，新增原生桌面管理中心，覆盖连接、Token、服务、日志、升级与卸载。
+- GUI 按需运行，关闭不停止 Go 服务；保留旧配置和 Token，新增真实旧包升级及 GUI 渲染验证。
+- 新版 GUI 依赖 Windows .NET Framework 4.7.2+，预览包未签名。
+
 ## Windows v0.3.0-rc.1
 
 - Windows x64 原生指标、服务、MSI、完整验证 ZIP，附安装、诊断、Token、升级和卸载工具。

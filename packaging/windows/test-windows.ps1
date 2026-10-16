@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([switch]$Lifecycle,[string]$MsiPath)
+param([switch]$Lifecycle,[string]$MsiPath,[string]$PreviousMsiPath)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $ctl = Join-Path $env:ProgramFiles 'SMA/sma-ctl.exe'
@@ -11,7 +11,13 @@ function Invoke-Ctl([string[]]$Arguments) {
 if ($Lifecycle) {
     if ($env:SMA_RUN_WINDOWS_INSTALL_TESTS -ne '1') { throw 'Lifecycle test requires SMA_RUN_WINDOWS_INSTALL_TESTS=1 on a disposable machine.' }
     if ((Test-Path -LiteralPath $data) -or (Get-Service SMA -ErrorAction SilentlyContinue)) { throw 'Lifecycle test requires a clean machine without SMA.' }
+    $oldHash = $null
+    if ($PreviousMsiPath) {
+        & "$PSScriptRoot/install-sma.ps1" -MsiPath $PreviousMsiPath
+        $oldHash = (Get-FileHash -LiteralPath "$data/token").Hash
+    }
     & "$PSScriptRoot/install-sma.ps1" -MsiPath $MsiPath -ListenAddress '0.0.0.0:9108' -AllowedSource '127.0.0.1'
+    if ($oldHash -and (Get-FileHash -LiteralPath "$data/token").Hash -ne $oldHash) { throw 'Major upgrade changed bearer token.' }
     $rule = Get-NetFirewallRule -Name 'SMA-Agent-Inbound'
     $sources = @($rule | Get-NetFirewallAddressFilter | Select-Object -ExpandProperty RemoteAddress)
     if ($sources.Count -ne 1 -or $sources[0] -ne '127.0.0.1') { throw 'Firewall source scope was not applied.' }
@@ -44,6 +50,18 @@ if ($metrics -notmatch 'sma_cpu_seconds_total' -or $metrics -notmatch 'sma_memor
 Write-Host "PASS: authenticated metrics; CPU $usage%; logical CPUs $($second.cpu.logicalCount); memory $($second.memory.totalBytes); volumes $($second.filesystems.Count)."
 foreach ($warning in $second.errors) { Write-Warning "Collector $($warning.collector): $($warning.message)" }
 if ($Lifecycle) {
+    $gui = Join-Path $env:ProgramFiles 'SMA/sma-gui.exe'
+    $guiOutput = if ($env:GITHUB_WORKSPACE) { Join-Path $env:GITHUB_WORKSPACE 'dist/gui-verification' } else { Join-Path $env:TEMP 'sma-gui-verification' }
+    $guiProcess = Start-Process -FilePath $gui -ArgumentList @('--self-test',('"{0}"' -f $guiOutput)) -PassThru
+    if (-not $guiProcess.WaitForExit(90000)) { $guiProcess.Kill(); throw 'GUI self-test timed out.' }
+    if ($guiProcess.ExitCode -ne 0) { throw "GUI verification failed; see $guiOutput" }
+    Get-Content (Join-Path $guiOutput 'gui-result.txt')
+    $network = Join-Path $env:ProgramFiles 'SMA/configure-network.ps1'
+    & $network -ListenAddress '0.0.0.0:9108' -Sources '127.0.0.1'
+    & $network -Read
+    & $network -ListenAddress '127.0.0.1:9108'
+    if (Get-NetFirewallRule -Name 'SMA-Agent-Inbound' -ErrorAction SilentlyContinue) { throw 'Local-only mode must remove the SMA inbound rule.' }
+    & $network -ListenAddress '0.0.0.0:9108' -Sources '127.0.0.1'
     $initialHash = (Get-FileHash -LiteralPath $config.authTokenFile).Hash
     & "$PSScriptRoot/install-sma.ps1" -MsiPath $MsiPath
     if ((Get-FileHash -LiteralPath $config.authTokenFile).Hash -ne $initialHash) { throw 'Reinstallation changed token.' }

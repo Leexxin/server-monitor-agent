@@ -7,6 +7,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
   windows:
     runs-on: windows-2022
@@ -37,7 +40,22 @@ jobs:
         shell: powershell
         env:
           SMA_RUN_WINDOWS_INSTALL_TESTS: '1'
-        run: ./packaging/windows/test-windows.ps1 -Lifecycle -MsiPath (Resolve-Path dist/windows/*.msi).Path
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $previous = Join-Path $env:RUNNER_TEMP 'sma-previous'
+          New-Item -ItemType Directory -Force $previous | Out-Null
+          gh release download windows-v0.3.0-rc.1 --pattern '*.msi' --dir $previous
+          if ($LASTEXITCODE -ne 0) { throw 'Could not download previous MSI for major-upgrade verification' }
+          $oldMsi = (Get-ChildItem $previous -Filter *.msi).FullName
+          if ((Get-FileHash $oldMsi -Algorithm SHA256).Hash -ne '5b28a71a9f6af8a8be73b2d6d85a38822926d1b93911d1017e09e9915ec6332a') { throw 'Previous MSI checksum mismatch' }
+          ./packaging/windows/test-windows.ps1 -Lifecycle -MsiPath (Resolve-Path dist/windows/*.msi).Path -PreviousMsiPath $oldMsi
+      - name: Upload GUI rendering evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sma-gui-verification
+          path: dist/gui-verification
+          if-no-files-found: ignore
       - name: Upload Windows packages
         uses: actions/upload-artifact@v4
         with:
@@ -71,4 +89,4 @@ jobs:
       - name: Publish Windows preview
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/windows/* --prerelease --title 'SMA Windows v0.3.0-rc.1' --notes-file docs/releases/windows-v0.3.0-rc.1.md
+        run: gh release create "$GITHUB_REF_NAME" dist/windows/* --prerelease --title "SMA ${GITHUB_REF_NAME}" --notes-file "docs/releases/${GITHUB_REF_NAME}.md"

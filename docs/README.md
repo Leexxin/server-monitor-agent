@@ -6,6 +6,7 @@
 | --- | --- |
 | Windows MSI、接口、完整生命周期及验收 | [Windows 指南](windows/README.md) |
 | Windows 首版验证范围 | [Windows v0.3.0-rc.1](releases/windows-v0.3.0-rc.1.md) |
+| Windows 图形管理与安装体验 | [Windows v0.3.1-rc.1](releases/windows-v0.3.1-rc.1.md) |
 | 安装、Token、启停、自启、升级、卸载 | [全生命周期操作](lifecycle.md) |
 | 从 GOFTP 自动选择版本和架构 | [自动安装](automatic-installation.md) |
 | 原生 DEB/RPM/APK、通用包与监听配置 | [安装与卸载](installation.md) |

@@ -33,6 +33,8 @@ curl http://127.0.0.1:9108/metrics
 
 ## 文档
 
+Windows 推荐直接运行 MSI，安装完成打开“SMA 管理中心”。服务状态、Token、连接配置、日志、启停、自启、升级和卸载均提供图形入口，参见 [Windows 操作指南](docs/windows/README.md)。
+
 - [统一文档目录](docs/README.md)
 - [sma-center 无数据排障](docs/troubleshooting.md)
 - [文档维护与发布规范](docs/maintenance.md)

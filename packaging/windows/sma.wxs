@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
-  <Product Id="*" Name="SMA" Language="1033" Version="$(var.MsiVersion)" Manufacturer="SMA Project" UpgradeCode="48D2A5BA-96F0-4457-98A0-CBE35CE7247C">
+  <Product Id="*" Name="SMA" Language="2052" Codepage="936" Version="$(var.MsiVersion)" Manufacturer="SMA Project" UpgradeCode="48D2A5BA-96F0-4457-98A0-CBE35CE7247C">
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x64" Description="SMA Windows monitoring agent" />
     <MediaTemplate EmbedCab="yes" />
-    <MajorUpgrade Schedule="afterInstallInitialize" DowngradeErrorMessage="A newer SMA version is already installed." />
+    <MajorUpgrade Schedule="afterInstallInitialize" IgnoreLanguage="yes" DowngradeErrorMessage="已安装更新版本的 SMA，不能降级。" />
     <Condition Message="SMA requires 64-bit Windows.">Installed OR VersionNT64</Condition>
+    <Property Id="SMA_NET_RELEASE"><RegistrySearch Id="FrameworkRelease" Root="HKLM" Key="SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" Name="Release" Type="raw" Win64="yes" /></Property>
+    <Condition Message="SMA 管理界面需要 .NET Framework 4.7.2 或更新版本。请先启用或安装此 Windows 组件。">Installed OR SMA_NET_RELEASE &gt;= "#461808"</Condition>
+    <Property Id="MsiLogging" Value="voicewarmupx" />
     <Property Id="ARPNOMODIFY" Value="1" />
     <Property Id="ARPHELPLINK" Value="https://github.com/Leexxin/server-monitor-agent" />
     <Directory Id="TARGETDIR" Name="SourceDir">
@@ -20,20 +23,27 @@
           <Component Id="Management" Guid="878976EA-3EA3-4EF5-9546-8A908CFA42FD" Win64="yes">
             <File Id="CtlExe" Source="$(var.Payload)\sma-ctl.exe" KeyPath="yes" />
           </Component>
+          <Component Id="Gui" Guid="59D882F2-041C-4E7D-9138-CFD53FE0E45F" Win64="yes">
+            <File Id="GuiExe" Source="$(var.Payload)\sma-gui.exe" KeyPath="yes">
+              <Shortcut Id="GuiStartMenu" Directory="SmaMenu" Name="SMA 管理中心" Advertise="yes" WorkingDirectory="INSTALLDIR" />
+            </File>
+          </Component>
           <Component Id="Registration" Guid="7F92A7C2-E54F-499D-A014-612C3C62939B" Win64="yes">
             <RegistryValue Root="HKLM" Key="Software\SMA" Name="ProductCode" Value="[ProductCode]" Type="string" KeyPath="yes" />
             <RegistryValue Root="HKLM" Key="Software\SMA" Name="Version" Value="$(var.DisplayVersion)" Type="string" />
           </Component>
         </Directory>
       </Directory>
+      <Directory Id="ProgramMenuFolder"><Directory Id="SmaMenu" Name="SMA" /></Directory>
     </Directory>
     <CustomAction Id="Provision" FileKey="CtlExe" ExeCommand="provision" Execute="deferred" Impersonate="no" Return="check" />
     <InstallExecuteSequence>
       <Custom Action="Provision" After="InstallFiles">NOT REMOVE~="ALL"</Custom>
     </InstallExecuteSequence>
     <Feature Id="Complete" Title="SMA" Level="1">
-      <ComponentRef Id="Agent" /><ComponentRef Id="Management" /><ComponentRef Id="Registration" />
+      <ComponentRef Id="Agent" /><ComponentRef Id="Management" /><ComponentRef Id="Registration" /><ComponentRef Id="Gui" />
       <ComponentGroupRef Id="SupportFiles" />
     </Feature>
+    <UIRef Id="SmaInstallerUI" />
   </Product>
 </Wix>
