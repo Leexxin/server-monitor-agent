@@ -2,6 +2,8 @@
 param([string]$ListenAddress,[string]$Sources,[switch]$Read)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+$OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+[Console]::OutputEncoding = $OutputEncoding
 $ruleName = 'SMA-Agent-Inbound'
 $rule = Get-NetFirewallRule -Name $ruleName -ErrorAction SilentlyContinue
 if ($Read) {
@@ -19,6 +21,7 @@ $ip = $null
 if (-not [Net.IPAddress]::TryParse($listenHost,[ref]$ip)) { throw 'Invalid listen IP address.' }
 $localOnly = [Net.IPAddress]::IsLoopback($ip)
 $addresses = @($Sources -split ',' | ForEach-Object {$_.Trim()} | Where-Object {$_})
+if ($localOnly) { $addresses = @() }
 if (-not $localOnly -and $addresses.Count -eq 0) { throw 'Specify the SMA Center IP address or a restricted CIDR for remote access.' }
 foreach ($address in $addresses) {
     $parts = $address.Split('/'); $remoteIP = $null
