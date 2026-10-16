@@ -2,6 +2,8 @@
 
 Windows GUI 代码位于 `windows/gui/`，使用系统 Windows Forms/.NET Framework 4.7.2+，调用同包 `sma-ctl` 与固定 PowerShell 文件管理 SCM、配置及限定防火墙；本机 HTTP 请求禁代理与重定向。凭据不经过命令行参数，不写 GUI 日志，GUI 关闭不停止 Go 服务。MSI/GUI 维护使用独立临时进程避免文件锁，所有 UI/后端操作有结果或错误反馈。界面与旧包升级由 Windows CI 验证，GUI 实机体验另行验收。
 
+GUI 由 Windows 自带 Framework64 C# 编译器构建，脚本显式传入完整源码路径并使用 UTF-8，避免旧编译器对子目录通配符路径的不同解释。最终构建必须在 Windows CI 验证。
+
 Windows x64 首版现采用相同仓库、共享 HTTP/快照/鉴权、按 Go 构建约束分离采集器及运行入口。通过 x/sys 固定依赖调用 Windows API 和 SCM，原生服务、管理工具、MSI/PowerShell 安装与 Windows CI 配套维护，详细范围和限制见 [Windows 开发说明](windows/README.md#构建和发布)。下文 Linux 设计继续适用。
 
 > 文档状态：Draft v0.1

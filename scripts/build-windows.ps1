@@ -18,7 +18,8 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "Build failed: $name" }
     }
     $csc = Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
-    & $csc /nologo /utf8output /codepage:65001 /target:winexe /platform:x64 /optimize+ /win32manifest:windows/gui/app.manifest "/out:$payload/sma-gui.exe" /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.ServiceProcess.dll /reference:System.Web.Extensions.dll windows/gui/*.cs
+    $guiSources = @(Get-ChildItem (Join-Path $project 'windows/gui') -Filter '*.cs' | ForEach-Object FullName)
+    & $csc /nologo /utf8output /codepage:65001 /target:winexe /platform:x64 /optimize+ /win32manifest:windows/gui/app.manifest "/out:$payload/sma-gui.exe" /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.ServiceProcess.dll /reference:System.Web.Extensions.dll @guiSources
     if ($LASTEXITCODE -ne 0) { throw 'GUI compilation failed' }
     Copy-Item windows/gui/app.config "$payload/sma-gui.exe.config"
     Copy-Item -Recurse -Force docs $payload
