@@ -51,7 +51,7 @@ try {
         '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(),$relative
     }
     [IO.File]::WriteAllText((Join-Path $payload 'checksums.txt'),($manifest -join "`n")+"`n",[Text.Encoding]::ASCII)
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    Add-Type -AssemblyName System.IO.Compression,System.IO.Compression.FileSystem
     $zip = "$out/sma_${Version}_windows_amd64.zip"
     if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
     $archive = [IO.Compression.ZipFile]::Open($zip,[IO.Compression.ZipArchiveMode]::Create)

@@ -89,4 +89,11 @@ jobs:
       - name: Publish Windows preview
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/windows/* --prerelease --title "SMA ${GITHUB_REF_NAME}" --notes-file "docs/releases/${GITHUB_REF_NAME}.md"
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            count=$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets | length')
+            test "$count" -eq 3 || { echo "Existing release is incomplete; refusing to overwrite immutable assets"; exit 1; }
+            echo "Release already published; keeping existing assets unchanged"
+            exit 0
+          fi
+          gh release create "$GITHUB_REF_NAME" dist/windows/* --prerelease --verify-tag --title "SMA ${GITHUB_REF_NAME}" --notes-file "docs/releases/${GITHUB_REF_NAME}.md"
