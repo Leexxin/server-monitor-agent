@@ -4,6 +4,8 @@ Windows GUI 代码位于 `windows/gui/`，使用系统 Windows Forms/.NET Framew
 
 GUI 由 Windows 自带 Framework64 C# 编译器构建，脚本显式传入完整源码路径并使用 UTF-8，避免旧编译器对子目录通配符路径的不同解释。最终构建必须在 Windows CI 验证。
 
+中文 UI 通过 WiX 本地化交付，MSI 产品识别语言保持与首版一致，确保固定 UpgradeCode 的旧版能被识别并升级；不要直接改变产品语言来本地化界面。
+
 Windows x64 首版现采用相同仓库、共享 HTTP/快照/鉴权、按 Go 构建约束分离采集器及运行入口。通过 x/sys 固定依赖调用 Windows API 和 SCM，原生服务、管理工具、MSI/PowerShell 安装与 Windows CI 配套维护，详细范围和限制见 [Windows 开发说明](windows/README.md#构建和发布)。下文 Linux 设计继续适用。
 
 > 文档状态：Draft v0.1
