@@ -76,7 +76,7 @@ procd 将标准输出和错误送入 OpenWrt 系统日志，使用 `logread` 排
 
 ```sh
 sudo sma-ctl upgrade
-# 指定版本（须仍在共享目录的 checksums.txt 中）：
+# 指定版本（须仍在对应 v版本/ 目录的 checksums.txt 中）：
 sudo sma-ctl upgrade --version 0.2.2
 ```
 
@@ -106,6 +106,4 @@ sudo sma-ctl uninstall --purge --yes    # 非交互，删除 /opt/sma
 
 ## 6. 管理员发布更新
 
-共享目录除安装包、`latest.txt` 和 `checksums.txt` 外，还要提供 `install-sma.sh`、`install-sma.sh.sha256`、`sma-ctl.sh`、`sma-ctl.sh.sha256`。构建脚本自动生成这些文件。
-
-先上传包及脚本，再上传对应校验文件，最后切换 `latest.txt`；发布窗口发生版本索引不一致时安装会停止，重试即可。HTTP 同源校验用于发现传输和发布错误，生产建议使用 HTTPS 和独立只读下载入口。
+GOFTP 分享根目录保留固定入口 `install-sma.sh`、`.sha256` 和 `latest.txt`；每个版本的 `checksums.txt`、`sma-ctl.sh`、其 `.sha256` 和所有安装包放入独立的 `v版本/`。发布时运行 `sh scripts/deploy-share.sh 版本`；脚本校验并回读版本目录，最后更新根目录的 `latest.txt`。详见[一键安装与版本目录](automatic-installation.md)。HTTP 同源校验用于发现传输和发布错误，生产建议使用 HTTPS 和独立只读下载入口。

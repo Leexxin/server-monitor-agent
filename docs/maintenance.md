@@ -29,7 +29,7 @@ Windows 预览使用 `windows-v*` 标签、独立 Windows 工作流与校验清�
 5. 合并通过 CI 的 PR，再基于合并提交创建不可变 `vX.Y.Z` 标签。发布说明写入 `docs/releases/vX.Y.Z.md`，由工作流读取。
 6. Release 工作流测试、构建双架构 DEB/RPM/APK/通用包，并在临时 Linux VM 执行 DEB 生命周期测试，成功后发布制品和文档包。
 7. 下载发布制品核对 SHA-256，核对 `/opt/sma/docs` 所含文档。发布成功不代表已更新生产服务器。
-8. 如需同步 GOFTP，先上传包与脚本，再上传校验文件，最后更新 `latest.txt`；回读确认脚本、版本索引和目标架构安装包。
+8. Release 生成 `sma_版本_gofpt_share.tar.gz`。同步 GOFTP 时运行 `sh scripts/deploy-share.sh 版本`：发布器先上传并回读校验不可变 `v版本/`，再更新根目录固定入口，最后切换 `latest.txt`。切换后从目标系统执行一键安装验收；上传成功不等于实机安装成功。
 
 ## 验证与保密边界
 

@@ -63,6 +63,9 @@ jobs:
           SMA_PACKAGE_RELEASE: ${{ steps.version.outputs.package_release }}
         run: ./scripts/build-packages.sh "${{ steps.version.outputs.version }}"
 
+      - name: Prepare versioned GOFTP layout
+        run: sh scripts/prepare-share.sh "${{ steps.version.outputs.version }}"
+
       - name: Build release bundle
         run: |
           tar -C dist/packages -czf "dist/sma_${{ steps.version.outputs.version }}_linux_packages.tar.gz" .
@@ -70,8 +73,14 @@ jobs:
           tar -czf "dist/sma_${{ steps.version.outputs.version }}_docs.tar.gz" README.md CHANGELOG.md CONTRIBUTING.md AGENTS.md docs
           (cd dist && sha256sum "sma_${{ steps.version.outputs.version }}_docs.tar.gz" > "sma_${{ steps.version.outputs.version }}_docs.tar.gz.sha256")
 
+      - name: Test GOFTP publisher against a local fixture
+        run: sh scripts/test-share-publisher.sh "${{ steps.version.outputs.version }}"
+
       - name: Test DEB lifecycle on Linux
         run: sudo env SMA_RUN_INSTALL_TESTS=1 sh scripts/test-install-linux.sh "dist/packages/sma_${{ steps.version.outputs.version }}_linux_amd64.deb"
+
+      - name: Test versioned one-command installer on Linux
+        run: sudo env SMA_RUN_INSTALL_TESTS=1 sh scripts/test-auto-installer-linux.sh "dist/share-v${{ steps.version.outputs.version }}" "${{ steps.version.outputs.version }}"
 
       - name: Publish GitHub Release
         env:

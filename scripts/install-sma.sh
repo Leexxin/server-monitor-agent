@@ -13,14 +13,13 @@ usage() {
 Usage: sh install-sma.sh [--version VERSION] [--force] [--show-token]  # run as root
 
 Options:
-  --version VERSION  Install this version instead of latest.txt (its files must
-                     still be present in checksums.txt).
+  --version VERSION  Install this version from vVERSION/ instead of latest.txt.
   --force            Reinstall even when the installed version matches.
   --show-token       Print the Bearer Token after successful installation.
   -h, --help         Show this help.
 
 Environment:
-  SMA_SHARE_URL      SFTPGo public-share URL, without /browse (default: SMA LAN share)
+  SMA_SHARE_URL      SFTPGo public-share root URL, without /browse or /vVERSION
   SMA_INSTALL_LOG    Log file (default: /var/log/sma-install.log)
 EOF
 }
@@ -82,9 +81,16 @@ run_logged() {
 download() {
     name=$1
     output=$2
+    scope=${3:-release}
     # Names are constrained to release artifact basenames before this function.
-    url="${SHARE_URL%/}/browse?path=%2F$name"
-    log "Downloading $name"
+    name_url=$(printf '%s' "$name" | sed 's/+/%2B/g')
+    case "$scope" in
+        root) remote_path="%2F$name_url" ;;
+        release) remote_path="%2Fv${version_url}%2F$name_url" ;;
+        *) fatal "Invalid download scope: $scope" ;;
+    esac
+    url="${SHARE_URL%/}/browse?path=$remote_path"
+    log "Downloading ${scope}: $name"
     if command -v curl >/dev/null 2>&1; then
         curl --fail --location --silent --show-error --retry 3 \
             --connect-timeout 10 --max-time 300 --output "$output" "$url" \
@@ -96,6 +102,10 @@ download() {
         fatal 'curl or wget is required.'
     fi
     [ -s "$output" ] || fatal "Downloaded file is empty: $name"
+    # SFTPGo can return an HTML browse page with HTTP 200 for a missing path.
+    if head -c 256 "$output" | grep -Eiq '<!doctype html|<html'; then
+        fatal "Expected a file, but the share returned HTML: $scope/$name"
+    fi
 }
 
 if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
@@ -141,10 +151,10 @@ if [ "$package_kind" = apk ] && ! command -v apk >/dev/null 2>&1; then
     fatal 'Alpine package manager apk was not found.'
 fi
 
-download latest.txt "$work_dir/latest.txt"
 if [ -n "$REQUESTED_VERSION" ]; then
     version=$REQUESTED_VERSION
 else
+    download latest.txt "$work_dir/latest.txt" root
     version=$(tr -d '\r\n' < "$work_dir/latest.txt")
 fi
 case "$version" in
@@ -152,6 +162,7 @@ case "$version" in
 esac
 printf '%s\n' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$' \
     || fatal "Invalid version: $version"
+version_url=$(printf '%s' "$version" | sed 's/+/%2B/g')
 
 download checksums.txt "$work_dir/checksums.txt"
 case "$package_kind" in
