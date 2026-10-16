@@ -107,16 +107,17 @@ namespace SmaManager {
         }
         void BuildConnection() {
             var page=Page("连接与 Token");
-            Add(page,new Label {Text="连接配置",Font=new Font(Font.FontFamily,15,FontStyle.Bold)},40);
+            Add(page,new Label {Text="连接配置",Font=new Font(Font.FontFamily,15,FontStyle.Bold)},36);
             Add(page,Note("监听地址（IP:端口）"),26); listen.AccessibleName="监听地址";Add(page,listen,38);
             Add(page,Actions(Button("仅本机访问",delegate {listen.Text="127.0.0.1:"+Port();return Task.FromResult(0);}),Button("允许远程接入",delegate {listen.Text="0.0.0.0:"+Port();sources.Focus();return Task.FromResult(0);})),48);
             Add(page,Note("允许访问的 sma-center IP 或 CIDR（多项用英文逗号分隔，例如 192.168.1.10）"),30);
             sources.AccessibleName="防火墙允许来源";Add(page,sources,38);
             Add(page,Actions(Button("保存连接设置",SaveConnection,true),Button("重新读取配置",LoadConnection)),48);
-            Add(page,Note("保存将重启服务并应用 SMA 防火墙规则。远程接入必须填写来源；其他防火墙规则仍可能影响实际可达性。"),42);
-            Add(page,new Label {Text="Bearer Token",Font=new Font(Font.FontFamily,14,FontStyle.Bold)},38);
+            Add(page,Note("保存将重启服务并应用 SMA 防火墙规则。远程接入必须填写来源；其他防火墙规则仍可能影响实际可达性。"),38);
+            Add(page,new Label {Text="Bearer Token",Font=new Font(Font.FontFamily,14,FontStyle.Bold)},34);
             token.ReadOnly=true;token.UseSystemPasswordChar=true;token.AccessibleName="Bearer Token（默认隐藏）";token.Font=new Font("Consolas",10);Add(page,token,36);
-            Add(page,Actions(Button("显示 30 秒",ShowToken),Button("复制 Token",CopyToken,true),Button("立即隐藏",delegate {HideToken();return Task.FromResult(0);}),Button("重置 Token…",RotateToken)),52);
+            var copyToken=Button("复制 Token",CopyToken,true);copyToken.Name="CopyToken";
+            Add(page,Actions(Button("显示 30 秒",ShowToken),copyToken,Button("立即隐藏",delegate {HideToken();return Task.FromResult(0);}),Button("重置 Token…",RotateToken)),52);
             Add(page,Note("将原始 Token 填入 sma-center，不带 Bearer 前缀。复制后 60 秒内，若剪贴板仍是本次 Token，将自动清空。重置会使旧凭据失效。"),50);
         }
         void BuildMaintenance() {
@@ -242,9 +243,9 @@ namespace SmaManager {
                 Directory.CreateDirectory(TestDirectory);
                 for(int i=0;i<tabs.TabPages.Count;i++){
                     tabs.SelectedIndex=i;PerformLayout();Application.DoEvents();
-                    if(i==0){
-                        var copy=Controls.Find("CopyAgentUrl",true).Single();var point=tabs.TabPages[0].PointToClient(copy.PointToScreen(Point.Empty));
-                        if(point.Y+copy.Height>tabs.TabPages[0].ClientSize.Height)throw new Exception("Primary connection action is below the first-screen viewport");
+                    if(i==0||i==1){
+                        var copy=Controls.Find(i==0?"CopyAgentUrl":"CopyToken",true).Single();var point=tabs.TabPages[i].PointToClient(copy.PointToScreen(Point.Empty));
+                        if(point.Y+copy.Height>tabs.TabPages[i].ClientSize.Height)throw new Exception("Primary connection action is below the first-screen viewport");
                     }
                     if(i==3)await Diagnose();
                     using(var bitmap=new Bitmap(Width,Height)){DrawToBitmap(bitmap,new Rectangle(0,0,Width,Height));bitmap.Save(Path.Combine(TestDirectory,"gui-"+i+".png"));}
