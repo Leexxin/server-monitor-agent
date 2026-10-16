@@ -20,7 +20,7 @@ namespace SmaManager {
         readonly Button startup = new Button();
         readonly ProgressBar progress = new ProgressBar { Dock=DockStyle.Bottom, Height=4, Visible=false, Style=ProgressBarStyle.Marquee };
         readonly Timer refresh = new Timer { Interval=4000 }, privacy = new Timer { Interval=1000 };
-        bool busy, loadedConfig;
+        bool busy, loadedConfig, refreshing;
         string currentListen="", copiedToken="";
         DateTime tokenUntil, copyUntil;
         AgentStatus last;
@@ -44,7 +44,7 @@ namespace SmaManager {
             footer.Dock=DockStyle.Fill; footer.ForeColor=Muted; footer.Text="关闭此窗口后，SMA 服务仍在后台运行。"; bottom.Controls.Add(footer);
             BuildOverview(); BuildConnection(); BuildMaintenance(); BuildDiagnostics();
             Controls.Add(tabs); Controls.Add(banner); Controls.Add(top); Controls.Add(progress); Controls.Add(bottom);
-            refresh.Tick+=async delegate { if(!busy) await RefreshStatus(); };
+            refresh.Tick+=async delegate { if(!busy&&!refreshing) await RefreshStatus(true); };
             privacy.Tick+=delegate {
                 if(token.Text.Length>0 && DateTime.UtcNow>tokenUntil) HideToken();
                 if(copiedToken.Length>0 && DateTime.UtcNow>copyUntil) ClearOwnedClipboard();
@@ -150,9 +150,12 @@ namespace SmaManager {
                 url.Text="http://"+selected+":"+uri.Port;
             }catch{url.Text="";}
         }
-        async Task RefreshStatus() {
-            await Work("正在检查服务与指标…",async delegate {
-                last=await Task.Run(()=>AgentClient.Status()); currentListen=last.Listen;
+        Task RefreshStatus() { return RefreshStatus(false); }
+        async Task RefreshStatus(bool automatic) {
+            Func<Task> apply=async delegate {
+                var next=await Task.Run(()=>AgentClient.Status());
+                if(IsDisposed||Disposing||(automatic&&busy))return;
+                last=next; currentListen=last.Listen;
                 state.Text="● "+last.State;state.ForeColor=last.State=="运行中"&&last.Error.Length==0?Accent:Color.FromArgb(160,82,15);
                 meta.Text="版本 "+last.Version+"    开机自启："+last.Startup+"    检查于 "+DateTime.Now.ToString("HH:mm:ss");
                 startup.Text=last.Startup=="已启用"?"关闭开机自启":"启用开机自启";
@@ -179,7 +182,12 @@ namespace SmaManager {
                 facts.Text=AgentClient.Text(machine,"hostname")+"    "+AgentClient.Number(c,"logicalCount")+" 个逻辑 CPU    内存 "+(memTotal/1073741824).ToString("0.0")+" GiB\r\n运行时间 "+uptime.Days+"天 "+uptime.Hours+"小时 "+uptime.Minutes+"分钟    系统盘 "+mount;
                 var warnings=AgentClient.Get(s,"errors") as IEnumerable;
                 if(warnings!=null&&warnings.Cast<object>().Any())banner.Text="服务可用，但部分指标采集有警告。请到“日志与诊断”查看详情。";
-            });
+            };
+            if(automatic){
+                refreshing=true;
+                try{await apply();}catch(Exception error){if(!IsDisposed)banner.Text="状态刷新失败："+AgentClient.Redact(error.Message);}
+                finally{refreshing=false;}
+            }else{await Work("正在检查服务与指标…",apply);}
         }
         async Task LoadConnection() {
             await Work("正在读取连接配置…",async delegate {

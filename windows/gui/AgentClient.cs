@@ -23,7 +23,7 @@ namespace SmaManager {
         public static readonly string Root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "SMA");
         public static readonly string Data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "SMA");
         public static readonly string PowerShell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"WindowsPowerShell\v1.0\powershell.exe");
-        public static readonly JavaScriptSerializer Json = new JavaScriptSerializer { MaxJsonLength = 2 * 1024 * 1024 };
+        public static JavaScriptSerializer Json { get { return new JavaScriptSerializer { MaxJsonLength = 2 * 1024 * 1024 }; } }
         public static Dictionary<string, object> Object(object value) { return value as Dictionary<string, object> ?? new Dictionary<string, object>(); }
         public static object Get(Dictionary<string, object> map, string name) { object value; return map.TryGetValue(name, out value) ? value : null; }
         public static string Text(Dictionary<string, object> map, string name) { return Convert.ToString(Get(map, name), CultureInfo.InvariantCulture); }
