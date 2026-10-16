@@ -191,11 +191,11 @@ namespace SmaManager {
         }
         async Task SaveConnection() {
             string address=listen.Text.Trim(),allowed=sources.Text.Trim();
-            await Work("正在保存连接并检查服务，请稍候…",async delegate {
+            bool saved=await Work("正在保存连接并检查服务，请稍候…",async delegate {
                 string result=await Task.Run(()=>AgentClient.Script("configure-network.ps1","-ListenAddress",address,"-Sources",allowed));
                 output.Text=AgentClient.Redact(result);footer.Text="连接配置已保存。";
             });
-            await RefreshStatus();
+            if(saved)await RefreshStatus();
         }
         async Task ShowToken() {
             await Work("正在读取凭据…",async delegate {string value=await Task.Run(()=>AgentClient.Token());token.Text=value;token.UseSystemPasswordChar=false;tokenUntil=DateTime.UtcNow.AddSeconds(30);footer.Text="Token 已显示，30 秒后自动隐藏。";});
@@ -205,8 +205,8 @@ namespace SmaManager {
         }
         void HideToken(){token.Text="";token.UseSystemPasswordChar=true;}
         void ClearOwnedClipboard(){try{if(copiedToken.Length>0&&Clipboard.ContainsText()&&Clipboard.GetText()==copiedToken)Clipboard.Clear();}catch{}copiedToken="";}
-        async Task RotateToken(){if(!Confirm("重置 Token 会立即使 sma-center 等客户端的旧凭据失效。确认重置？"))return;HideToken();ClearOwnedClipboard();await Work("正在重置凭据…",async delegate{output.Text=await Task.Run(()=>AgentClient.Ctl("token","reset","--yes"));footer.Text="Token 已重置，请复制新值并更新 sma-center。";});await RefreshStatus();}
-        async Task Service(string action){await Work("正在变更服务，请等待结果…",async delegate{output.Text=await Task.Run(()=>AgentClient.Ctl(action));});await RefreshStatus();}
+        async Task RotateToken(){if(!Confirm("重置 Token 会立即使 sma-center 等客户端的旧凭据失效。确认重置？"))return;HideToken();ClearOwnedClipboard();bool done=await Work("正在重置凭据…",async delegate{output.Text=await Task.Run(()=>AgentClient.Ctl("token","reset","--yes"));footer.Text="Token 已重置，请复制新值并更新 sma-center。";});if(done)await RefreshStatus();}
+        async Task Service(string action){bool done=await Work("正在变更服务，请等待结果…",async delegate{output.Text=await Task.Run(()=>AgentClient.Ctl(action));});if(done)await RefreshStatus();}
         async Task Diagnose(){await Work("正在生成诊断报告…",async delegate{output.Text=await Task.Run(()=>AgentClient.Diagnostics());});}
         async Task Export(){await Diagnose();using(var dialog=new SaveFileDialog {Filter="文本报告 (*.txt)|*.txt",FileName="sma-diagnostics-"+DateTime.Now.ToString("yyyyMMdd-HHmmss")+".txt"}){if(dialog.ShowDialog(this)==DialogResult.OK){try{File.WriteAllText(dialog.FileName,AgentClient.Redact(output.Text),new UTF8Encoding(true));footer.Text="诊断报告已导出。";}catch(Exception e){Error(e);}}}}
         Task Help(){using(var dialog=new Form {Text="SMA 操作指南",Size=new Size(850,650),StartPosition=FormStartPosition.CenterParent}){var text=new TextBox{Multiline=true,ReadOnly=true,ScrollBars=ScrollBars.Vertical,Dock=DockStyle.Fill,Font=Font};string path=Path.Combine(AgentClient.Root,@"docs\windows\README.md");text.Text=File.Exists(path)?File.ReadAllText(path):"请查看安装包中的 docs/windows/README.md。";dialog.Controls.Add(text);dialog.ShowDialog(this);}return Task.FromResult(0);}
@@ -215,7 +215,7 @@ namespace SmaManager {
         bool Confirm(string message){return MessageBox.Show(this,message,"请确认",MessageBoxButtons.YesNo,MessageBoxIcon.Warning,MessageBoxDefaultButton.Button2)==DialogResult.Yes;}
         void OpenFolder(string path){try{if(!Directory.Exists(path))throw new DirectoryNotFoundException("目录尚不存在："+path);System.Diagnostics.Process.Start("explorer.exe",AgentClient.Quote(path));}catch(Exception e){Error(e);}}
         void Error(Exception e){string text=AgentClient.Redact(e.Message);banner.Text="操作未完成："+text;footer.Text="请到日志与诊断查看详情。";MessageBox.Show(this,text,"操作未完成",MessageBoxButtons.OK,MessageBoxIcon.Error);}
-        async Task Work(string message,Func<Task> action){if(busy)return;busy=true;tabs.Enabled=false;progress.Visible=true;footer.Text=message;try{await action();if(footer.Text==message)footer.Text="操作完成 · "+DateTime.Now.ToString("HH:mm:ss");}catch(Exception e){if(TestDirectory!=null)throw;Error(e);}finally{busy=false;tabs.Enabled=true;progress.Visible=false;}}
+        async Task<bool> Work(string message,Func<Task> action){if(busy)return false;busy=true;tabs.Enabled=false;progress.Visible=true;footer.Text=message;try{await action();if(footer.Text==message)footer.Text="操作完成 · "+DateTime.Now.ToString("HH:mm:ss");return true;}catch(Exception e){if(TestDirectory!=null)throw;Error(e);return false;}finally{busy=false;tabs.Enabled=true;progress.Visible=false;}}
 
         async Task SelfTest(){
             try {

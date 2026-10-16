@@ -27,6 +27,7 @@
             <File Id="GuiExe" Source="$(var.Payload)\sma-gui.exe" KeyPath="yes">
               <Shortcut Id="GuiStartMenu" Directory="SmaMenu" Name="SMA 管理中心" Advertise="yes" WorkingDirectory="INSTALLDIR" />
             </File>
+            <RemoveFolder Id="RemoveSmaMenu" Directory="SmaMenu" On="uninstall" />
           </Component>
           <Component Id="Registration" Guid="7F92A7C2-E54F-499D-A014-612C3C62939B" Win64="yes">
             <RegistryValue Root="HKLM" Key="Software\SMA" Name="ProductCode" Value="[ProductCode]" Type="string" KeyPath="yes" />
