@@ -85,6 +85,7 @@ build_arch() {
     install -m 0644 packaging/config/sma.env "$universal/sma.env"
     install -m 0644 packaging/systemd/sma.service "$universal/sma.service"
     install -m 0755 packaging/openrc/sma "$universal/sma.openrc"
+    install -m 0755 packaging/procd/sma "$universal/sma.procd"
     install -m 0644 README.md "$universal/README.md"
     install -m 0644 CHANGELOG.md "$universal/CHANGELOG.md"
     install -m 0644 docs/README.md docs/maintenance.md docs/troubleshooting.md "$universal/docs/"

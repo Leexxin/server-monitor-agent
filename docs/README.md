@@ -9,6 +9,7 @@
 | Windows 图形管理与安装体验 | [Windows v0.3.1-rc.1](releases/windows-v0.3.1-rc.1.md) |
 | 安装、Token、启停、自启、升级、卸载 | [全生命周期操作](lifecycle.md) |
 | 从 GOFTP 自动选择版本和架构 | [自动安装](automatic-installation.md) |
+| iStoreOS/OpenWrt 的 procd 安装与运维 | [自动安装](automatic-installation.md)、[全生命周期操作](lifecycle.md) |
 | 原生 DEB/RPM/APK、通用包与监听配置 | [安装与卸载](installation.md) |
 | sma-center 配置后无法获取数据 | [连通性与鉴权排障](troubleshooting.md) |
 | CPU、内存、磁盘接口与鉴权 | [指标接口对接](api-integration.md) |
@@ -16,5 +17,6 @@
 | 架构和开发设计 | [开发设计](server-monitor-agent-development.md) |
 | 修改、验证、Git 提交与发布规范 | [文档维护与发布](maintenance.md) |
 | 当前版本交付范围及验证边界 | [v0.2.3 发布说明](releases/v0.2.3.md) |
+| procd 适配范围及验证边界 | [v0.2.4 发布说明](releases/v0.2.4.md) |
 
 首次使用建议从全生命周期操作开始；遇到面板无数据时，先按照排障文档从调用方环境验证地址和鉴权。

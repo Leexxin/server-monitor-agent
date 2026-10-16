@@ -1,5 +1,11 @@
 # 变更记录
 
+## v0.2.4
+
+- Linux 通用包新增 iStoreOS/OpenWrt procd 服务脚本，自动安装支持自启、状态与完整管理命令。
+- 在 OpenWrt 缺少账户管理命令时尝试通过 opkg 安装 shadow 工具；不改变现有 DEB/RPM/APK 服务文件归属。
+- 补充 root 直接执行、架构、存储及实机验证边界说明。Agent API 和 Token 格式不变。
+
 ## Windows v0.3.1-rc.1
 
 - 中文 MSI 向导、完成页和开始菜单，新增原生桌面管理中心，覆盖连接、Token、服务、日志、升级与卸载。

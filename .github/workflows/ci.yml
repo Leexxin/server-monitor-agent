@@ -29,7 +29,9 @@ jobs:
         run: go vet ./...
 
       - name: Lifecycle script regression tests
-        run: sh scripts/test-lifecycle.sh
+        run: |
+          sh scripts/test-lifecycle.sh
+          sh scripts/test-procd.sh
 
       - name: Test with race detector
         run: go test -race ./...

@@ -17,6 +17,7 @@ SMA 的程序和配置统一位于 `/opt/sma`。安装和卸载必须使用 root
 | Debian、Ubuntu | `sma_*_linux_amd64.deb` | `sma_*_linux_arm64.deb` |
 | RHEL、CentOS、Rocky、AlmaLinux、Fedora、SUSE | `sma-*-1.x86_64.rpm` | `sma-*-1.aarch64.rpm` |
 | Alpine Linux | `sma_*_x86_64.apk` | `sma_*_aarch64.apk` |
+| iStoreOS/OpenWrt（procd） | `sma_*_linux_x86_64.tar.gz` | `sma_*_linux_aarch64.tar.gz` |
 | 其他 Linux | `sma_*_linux_x86_64.tar.gz` | `sma_*_linux_aarch64.tar.gz` |
 
 ## 校验
@@ -106,7 +107,7 @@ sudo ./uninstall.sh --purge
 
 - DEB/RPM 只安装 systemd 单元：`/usr/lib/systemd/system/sma.service`
 - APK 只安装 OpenRC 脚本：`/etc/init.d/sma`
-- 通用安装器同时携带两种模板，但只会安装当前系统实际使用的服务文件；systemd 单元安装到 `/etc/systemd/system/sma.service`
+- 通用安装器携带三种模板，但只安装当前系统实际使用的服务文件；systemd 单元安装到 `/etc/systemd/system/sma.service`，iStoreOS/OpenWrt 安装 procd 脚本到 `/etc/init.d/sma`
 
 从 `0.1.0-1` DEB 升级到 `0.1.0-2` 或更高版本时，安装脚本会清理由旧包错误安装的 `/etc/init.d/sma`，防止 systemd 与 SysV/OpenRC 入口并存。
 
@@ -157,6 +158,7 @@ SMA_OPTS="--listen-address=0.0.0.0:9108"
 ```bash
 sudo systemctl restart sma
 # OpenRC：sudo rc-service sma restart
+# iStoreOS/OpenWrt（已是 root）：/etc/init.d/sma restart
 ```
 
 查看状态：

@@ -18,7 +18,7 @@ authorized() {
     curl -fsS -H "Authorization: Bearer $token" http://127.0.0.1:9108/v1/snapshot >/dev/null
 }
 dpkg -i "$package"
-for doc in README.md maintenance.md troubleshooting.md releases/v0.2.3.md; do
+for doc in README.md maintenance.md troubleshooting.md releases/v0.2.3.md releases/v0.2.4.md; do
     [ -r "/opt/sma/docs/$doc" ] || { echo "Missing installed document: $doc" >&2; exit 1; }
 done
 ready

@@ -7,7 +7,7 @@ fi
 
 if [ "$(id -u)" -ne 0 ]; then
     echo "ERROR: SMA must be removed as root." >&2
-    echo "Run: sudo ./uninstall.sh" >&2
+    echo "Run as root (use sudo where available): sh ./uninstall.sh" >&2
     exit 1
 fi
 
@@ -26,6 +26,10 @@ if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
 elif command -v rc-service >/dev/null 2>&1; then
     rc-service sma stop >/dev/null 2>&1 || true
     rc-update del sma default >/dev/null 2>&1 || true
+    rm -f /etc/init.d/sma
+elif [ -r /etc/rc.common ] && [ -x /etc/init.d/sma ]; then
+    /etc/init.d/sma stop
+    /etc/init.d/sma disable
     rm -f /etc/init.d/sma
 fi
 

@@ -8,7 +8,7 @@ SMA_SHARE_URL=${SMA_SHARE_URL:-http://192.168.33.123:8080/web/client/pubshares/M
 fail() { printf '错误：%s\n' "$*" >&2; return 1; }
 help() {
     cat <<'EOF'
-SMA 管理工具（修改操作请使用 sudo sma-ctl ...）
+SMA 管理工具（修改操作请以 root 身份执行；系统提供 sudo 时也可使用）
 
   status                      查看版本、运行状态、开机自启和访问地址
   doctor                      检查配置、Token 权限和服务状态
@@ -47,7 +47,7 @@ read_setting() {
 }
 read_options() {
     options=$(read_setting SMA_OPTS) || { fail '配置必须是单行 SMA_OPTS="..." 格式，请检查 sma.env。'; return 1; }
-    # Both systemd and OpenRC must interpret our generated assignment identically.
+    # All supported service managers must interpret this assignment identically.
     case "$options" in
         *\"*|*\'*|*\`*|*\$*|*\\*) fail 'SMA_OPTS 包含复杂引用，请手动维护该配置；管理工具未修改它。'; return 1 ;;
     esac
@@ -136,8 +136,10 @@ manager() {
         service_manager=systemd
     elif command -v rc-service >/dev/null 2>&1 && command -v rc-update >/dev/null 2>&1; then
         service_manager=openrc
+    elif [ -r /etc/rc.common ] && { command -v procd >/dev/null 2>&1 || [ -x /sbin/procd ]; }; then
+        service_manager=procd
     else
-        fail '未发现运行中的 systemd 或 OpenRC。'; return 1
+        fail '未发现运行中的 systemd、OpenRC 或 procd。'; return 1
     fi
 }
 service_action() {
@@ -152,13 +154,15 @@ service_action() {
                 ;;
             *) systemctl "$1" sma.service ;;
         esac
-    else
+    elif [ "$service_manager" = openrc ]; then
         case "$1" in
             enable) rc-update add sma default ;;
             disable) rc-update del sma default ;;
             stop) rc-service --ifstarted sma stop ;;
             *) rc-service sma "$1" ;;
         esac
+    else
+        /etc/init.d/sma "$1"
     fi
 }
 restart_check() {
@@ -166,8 +170,10 @@ restart_check() {
     sleep 1
     if [ "$service_manager" = systemd ]; then
         systemctl is-active --quiet sma.service
-    else
+    elif [ "$service_manager" = openrc ]; then
         rc-service sma status
+    else
+        /etc/init.d/sma status
     fi
 }
 confirm() {
@@ -210,7 +216,7 @@ rotate_token() {
     new_token || { rm -f "$backup"; return 1; }
     if restart_check; then
         rm -f "$backup"
-        printf 'Token 已更换。运行 sudo sma-ctl token show 查看。\n'
+        printf 'Token 已更换。运行 sma-ctl token show 查看（需 root）。\n'
     else
         mv "$backup" "$token_file"
         restart_check || true
@@ -282,7 +288,7 @@ main() {
     action=${1:-help}
     [ "$#" -eq 0 ] || shift
     case "$action" in help|-h|--help) help; return ;; esac
-    [ "$(id -u)" -eq 0 ] || { fail '请使用 sudo sma-ctl 执行。'; return 1; }
+    [ "$(id -u)" -eq 0 ] || { fail '请以 root 身份执行 sma-ctl（系统提供 sudo 时也可使用）。'; return 1; }
     umask 077
     case "$action" in
         status)
@@ -292,7 +298,11 @@ main() {
             if [ "$service_manager" = systemd ]; then
                 systemctl is-enabled sma.service || true
                 systemctl --no-pager --full status sma.service
-            else rc-update show default; rc-service sma status; fi
+            elif [ "$service_manager" = openrc ]; then rc-update show default; rc-service sma status
+            else
+                if /etc/init.d/sma enabled; then printf '开机自启：已启用\n'; else printf '开机自启：未启用\n'; fi
+                /etc/init.d/sma status
+            fi
             ;;
         doctor)
             show_config
@@ -311,6 +321,7 @@ main() {
             case "$lines" in ''|*[!0-9]*) fail '日志行数必须为正整数。'; return 1 ;; esac
             manager
             if [ "$service_manager" = systemd ]; then journalctl -u sma.service -n "$lines" --no-pager;
+            elif [ "$service_manager" = procd ]; then logread | tail -n "$lines";
             elif [ -f /var/log/sma.log ]; then tail -n "$lines" /var/log/sma.log;
             else fail '旧版 OpenRC 服务未配置日志文件；请检查系统日志或升级安装包。'; return 1; fi
             ;;
