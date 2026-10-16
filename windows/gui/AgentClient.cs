@@ -89,10 +89,12 @@ namespace SmaManager {
             using (var response = (HttpWebResponse)request.GetResponse()) {
                 if (response.StatusCode != HttpStatusCode.OK) throw new InvalidOperationException("快照接口返回 HTTP "+(int)response.StatusCode);
                 using (var reader = new StreamReader(response.GetResponseStream())) {
-                    char[] data = new char[1024 * 1024 + 1]; int count = 0, n;
-                    while (count < data.Length && (n=reader.Read(data,count,data.Length-count))>0) count+=n;
-                    if (count >= data.Length) throw new InvalidOperationException("快照响应过大。");
-                    return Json.Deserialize<Dictionary<string,object>>(new string(data,0,count));
+                    char[] chunk = new char[4096]; var data = new StringBuilder(); int n;
+                    while ((n=reader.Read(chunk,0,chunk.Length))>0) {
+                        if (data.Length+n>1024*1024) throw new InvalidOperationException("快照响应过大。");
+                        data.Append(chunk,0,n);
+                    }
+                    return Json.Deserialize<Dictionary<string,object>>(data.ToString());
                 }
             }
         }

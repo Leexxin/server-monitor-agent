@@ -21,6 +21,7 @@ namespace SmaManager {
         readonly ProgressBar progress = new ProgressBar { Dock=DockStyle.Bottom, Height=4, Visible=false, Style=ProgressBarStyle.Marquee };
         readonly Timer refresh = new Timer { Interval=4000 }, privacy = new Timer { Interval=1000 };
         bool busy, loadedConfig, refreshing;
+        int operationEpoch;
         string currentListen="", copiedToken="";
         DateTime tokenUntil, copyUntil;
         AgentStatus last;
@@ -152,9 +153,10 @@ namespace SmaManager {
         }
         Task RefreshStatus() { return RefreshStatus(false); }
         async Task RefreshStatus(bool automatic) {
+            int epoch=operationEpoch;
             Func<Task> apply=async delegate {
                 var next=await Task.Run(()=>AgentClient.Status());
-                if(IsDisposed||Disposing||(automatic&&busy))return;
+                if(IsDisposed||Disposing||(automatic&&(busy||epoch!=operationEpoch)))return;
                 last=next; currentListen=last.Listen;
                 state.Text="● "+last.State;state.ForeColor=last.State=="运行中"&&last.Error.Length==0?Accent:Color.FromArgb(160,82,15);
                 meta.Text="版本 "+last.Version+"    开机自启："+last.Startup+"    检查于 "+DateTime.Now.ToString("HH:mm:ss");
@@ -223,7 +225,7 @@ namespace SmaManager {
         bool Confirm(string message){return MessageBox.Show(this,message,"请确认",MessageBoxButtons.YesNo,MessageBoxIcon.Warning,MessageBoxDefaultButton.Button2)==DialogResult.Yes;}
         void OpenFolder(string path){try{if(!Directory.Exists(path))throw new DirectoryNotFoundException("目录尚不存在："+path);System.Diagnostics.Process.Start("explorer.exe",AgentClient.Quote(path));}catch(Exception e){Error(e);}}
         void Error(Exception e){string text=AgentClient.Redact(e.Message);output.Text=text;banner.Text="操作未完成："+text;footer.Text="请到日志与诊断查看详情。";MessageBox.Show(this,text,"操作未完成",MessageBoxButtons.OK,MessageBoxIcon.Error);}
-        async Task<bool> Work(string message,Func<Task> action){if(busy)return false;busy=true;tabs.Enabled=false;progress.Visible=true;footer.Text=message;try{await action();if(footer.Text==message)footer.Text="操作完成 · "+DateTime.Now.ToString("HH:mm:ss");return true;}catch(Exception e){if(TestDirectory!=null)throw;Error(e);return false;}finally{busy=false;tabs.Enabled=true;progress.Visible=false;}}
+        async Task<bool> Work(string message,Func<Task> action){if(busy)return false;operationEpoch++;busy=true;tabs.Enabled=false;progress.Visible=true;footer.Text=message;try{await action();if(footer.Text==message)footer.Text="操作完成 · "+DateTime.Now.ToString("HH:mm:ss");return true;}catch(Exception e){if(TestDirectory!=null)throw;Error(e);return false;}finally{busy=false;tabs.Enabled=true;progress.Visible=false;}}
 
         async Task SelfTest(){
             try {

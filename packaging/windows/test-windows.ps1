@@ -59,6 +59,7 @@ if ($Lifecycle) {
     if (-not $guiProcess.WaitForExit(90000)) { $guiProcess.Kill(); throw 'GUI self-test timed out.' }
     if ($guiProcess.ExitCode -ne 0) { throw "GUI verification failed; see $guiOutput" }
     Get-Content (Join-Path $guiOutput 'gui-result.txt')
+    if ((Get-Service SMA).Status -ne 'Running') { throw 'Closing the GUI stopped the background agent.' }
     $network = Join-Path $env:ProgramFiles 'SMA/configure-network.ps1'
     & $network -ListenAddress '0.0.0.0:9108' -Sources '127.0.0.1'
     & $network -Read

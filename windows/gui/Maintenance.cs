@@ -66,6 +66,7 @@ namespace SmaManager {
                 string log=Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"maintenance.log");
                 details.Text="正在等待管理界面退出，以便替换或移除程序。\r\n请勿关闭系统或中断 Windows Installer。\r\n完成后会在此处显示结果。\r\n日志："+log;
                 try{
+                    string messages="";
                     int code=await Task.Run(()=>{
                         try{using(var p=Process.GetProcessById(parent)){if(!p.WaitForExit(20000))throw new InvalidOperationException("原管理窗口未退出，请关闭后重试。");}}catch(ArgumentException){}
                         ProcessStartInfo info;
@@ -76,9 +77,15 @@ namespace SmaManager {
                             info=new ProcessStartInfo(AgentClient.PowerShell,"-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "+AgentClient.Quote(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"uninstall-sma.ps1"))+" -Yes"+(action=="purge"?" -Purge":""));
                         }else throw new InvalidOperationException("未知维护操作。");
                         info.UseShellExecute=false;info.CreateNoWindow=true;info.WorkingDirectory=AppDomain.CurrentDomain.BaseDirectory;
-                        using(var p=Process.Start(info)){p.WaitForExit();return p.ExitCode;}
+                        info.RedirectStandardOutput=true;info.RedirectStandardError=true;
+                        using(var p=Process.Start(info)){
+                            var stdout=p.StandardOutput.ReadToEndAsync();var stderr=p.StandardError.ReadToEndAsync();p.WaitForExit();Task.WaitAll(stdout,stderr);
+                            messages=AgentClient.Redact(stdout.Result+stderr.Result);
+                            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"console.log"),messages,Encoding.UTF8);
+                            return p.ExitCode;
+                        }
                     });
-                    if(code!=0&&code!=3010)throw new InvalidOperationException("安装器返回错误代码 "+code+"。请查看维护日志与系统安装日志。");
+                    if(code!=0&&code!=3010)throw new InvalidOperationException("安装器返回错误代码 "+code+"。\r\n"+messages.Substring(0,Math.Min(messages.Length,4000))+"\r\n请查看维护目录中的日志。");
                     title.Text=action=="upgrade"?"升级完成":"卸载完成";
                     details.Text=(action=="upgrade"?"配置与 Token 已保留。请打开新版 SMA 管理中心检查状态。":action=="purge"?"程序与默认配置、Token、运行日志已清除。":"程序已卸载。配置、Token 和运行日志已保留，重装时可继续使用。")+"\r\n"+(code==3010?"Windows 要求重启，请在方便时手动重启。\r\n":"")+"维护目录："+AppDomain.CurrentDomain.BaseDirectory+"\r\n卸载的详细日志位于管理员临时目录 sma-uninstall-*.log。";
                     if(action=="upgrade"){
