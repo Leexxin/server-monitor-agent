@@ -33,6 +33,11 @@ jobs:
           sh scripts/test-lifecycle.sh
           sh scripts/test-procd.sh
 
+      - name: Validate release and installer scripts
+        run: |
+          sh -n scripts/install-sma.sh scripts/prepare-share.sh scripts/publish-share.sh scripts/deploy-share.sh scripts/test-auto-installer-linux.sh scripts/test-share-publisher.sh
+          python3 -m py_compile scripts/test-share-server.py
+
       - name: Test with race detector
         run: go test -race ./...
 
