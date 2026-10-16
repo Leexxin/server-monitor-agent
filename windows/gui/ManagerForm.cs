@@ -44,6 +44,7 @@ namespace SmaManager {
             var bottom=new Panel { Dock=DockStyle.Bottom,Height=46,Padding=new Padding(20,10,20,4) };
             footer.Dock=DockStyle.Fill; footer.ForeColor=Muted; footer.Text="关闭此窗口后，SMA 服务仍在后台运行。"; bottom.Controls.Add(footer);
             BuildOverview(); BuildConnection(); BuildMaintenance(); BuildDiagnostics();
+            tabs.SelectedIndexChanged+=async delegate { if(TestDirectory==null&&tabs.SelectedIndex==3&&!busy&&output.TextLength==0)await Diagnose(); };
             Controls.Add(tabs); Controls.Add(banner); Controls.Add(top); Controls.Add(progress); Controls.Add(bottom);
             refresh.Tick+=async delegate { if(!busy&&!refreshing) await RefreshStatus(true); };
             privacy.Tick+=delegate {
@@ -69,7 +70,7 @@ namespace SmaManager {
             stack.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100)); page.Controls.Add(stack); tabs.TabPages.Add(page); return stack;
         }
         void Add(TableLayoutPanel stack,Control control,int height) {
-            int row=stack.RowCount++; stack.RowStyles.Add(new RowStyle(SizeType.Absolute,height)); control.Dock=DockStyle.Fill; control.Margin=new Padding(0,0,0,12); stack.Controls.Add(control,0,row);
+            int row=stack.RowCount++; stack.RowStyles.Add(new RowStyle(SizeType.Absolute,height)); control.Dock=DockStyle.Fill; control.Margin=new Padding(0,0,0,control is Label?4:12); stack.Controls.Add(control,0,row);
         }
         Label Note(string text) { return new Label { Text=text,ForeColor=Muted,AutoEllipsis=true,Padding=new Padding(0,4,0,0) }; }
         Button Button(string text,Func<Task> action,bool primary=false) {
@@ -81,25 +82,26 @@ namespace SmaManager {
             var row=new FlowLayoutPanel { Dock=DockStyle.Fill,WrapContents=true,AutoScroll=false }; row.Controls.AddRange(controls); return row;
         }
         Panel Card(string title,Label value,string caption) {
-            var card=new Panel { Dock=DockStyle.Fill,BackColor=Color.FromArgb(242,247,248),Padding=new Padding(16),Margin=new Padding(0,0,12,0) };
-            var a=new Label {Text=title,Dock=DockStyle.Top,Height=25,ForeColor=Muted};
+            var card=new Panel { Dock=DockStyle.Fill,BackColor=Color.FromArgb(242,247,248),Padding=new Padding(14),Margin=new Padding(0,0,12,0) };
+            var a=new Label {Text=title,Dock=DockStyle.Top,Height=22,ForeColor=Muted};
             value.Dock=DockStyle.Fill; value.Font=new Font(Font.FontFamily,24,FontStyle.Bold); value.Text="—"; value.TextAlign=ContentAlignment.MiddleLeft;
-            var c=new Label {Text=caption,Dock=DockStyle.Bottom,Height=25,ForeColor=Muted}; card.Controls.Add(value);card.Controls.Add(c);card.Controls.Add(a); return card;
+            var c=new Label {Text=caption,Dock=DockStyle.Bottom,Height=22,ForeColor=Muted}; card.Controls.Add(value);card.Controls.Add(c);card.Controls.Add(a); return card;
         }
         void BuildOverview() {
             var page=Page("运行总览");
-            Add(page,new Label {Text="安装后，从这里确认 SMA 是否正常工作",Font=new Font(Font.FontFamily,15,FontStyle.Bold)},44);
+            Add(page,new Label {Text="安装后，从这里确认 SMA 是否正常工作",Font=new Font(Font.FontFamily,15,FontStyle.Bold)},40);
             var cards=new TableLayoutPanel { ColumnCount=3,RowCount=1 };
             for(int i=0;i<3;i++) cards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,33.333F));
             cards.Controls.Add(Card("CPU 使用率",cpu,"两次累计采样计算"),0,0);cards.Controls.Add(Card("内存使用率",memory,"物理内存"),1,0);cards.Controls.Add(Card("系统盘使用率",disk,"Windows 系统卷"),2,0);
-            Add(page,cards,146); facts.ForeColor=Muted; Add(page,facts,60);
-            Add(page,new Label {Text="接入 sma-center",Font=new Font(Font,FontStyle.Bold)},30);
-            Add(page,Note("1. 选择调用方能够访问的本机 IP。  2. 复制 Agent URL。  3. 到“连接与 Token”复制凭据。"),36);
+            Add(page,cards,130); facts.ForeColor=Muted; Add(page,facts,48);
+            Add(page,new Label {Text="接入 sma-center",Font=new Font(Font,FontStyle.Bold)},26);
+            Add(page,Note("1. 选择调用方能够访问的本机 IP。  2. 复制 Agent URL。  3. 到“连接与 Token”复制凭据。"),32);
             host.DropDownStyle=ComboBoxStyle.DropDownList;host.Width=210; host.AccessibleName="用于对接的本机 IP";
             host.SelectedIndexChanged+=delegate { UpdateUrl(); };
-            Add(page,Actions(host,Button("刷新本机 IP",delegate { LoadAddresses(); return Task.FromResult(0); })),48);
-            url.ReadOnly=true;url.Font=new Font("Consolas",12);url.AccessibleName="Agent URL";Add(page,url,42);
-            Add(page,Actions(Button("复制 Agent URL",delegate { if(url.Text.Length>0) Clipboard.SetText(url.Text); footer.Text="已复制 Agent URL。";return Task.FromResult(0); },true),Button("配置连接与 Token",delegate {tabs.SelectedIndex=1;return Task.FromResult(0);}),Button("重新检查",RefreshStatus)),52);
+            Add(page,Actions(host,Button("刷新本机 IP",delegate { LoadAddresses(); return Task.FromResult(0); })),44);
+            url.ReadOnly=true;url.Font=new Font("Consolas",12);url.AccessibleName="Agent URL";Add(page,url,38);
+            var copyUrl=Button("复制 Agent URL",delegate { if(url.Text.Length>0) Clipboard.SetText(url.Text); footer.Text="已复制 Agent URL。";return Task.FromResult(0); },true);copyUrl.Name="CopyAgentUrl";
+            Add(page,Actions(copyUrl,Button("配置连接与 Token",delegate {tabs.SelectedIndex=1;return Task.FromResult(0);}),Button("重新检查",RefreshStatus)),48);
             Add(page,Note("仅本机监听时，请先开启远程监听并限定 sma-center 来源 IP。本机检测通过后，再从调用方验证网络连通。"),52);
             LoadAddresses();
         }
@@ -240,6 +242,11 @@ namespace SmaManager {
                 Directory.CreateDirectory(TestDirectory);
                 for(int i=0;i<tabs.TabPages.Count;i++){
                     tabs.SelectedIndex=i;PerformLayout();Application.DoEvents();
+                    if(i==0){
+                        var copy=Controls.Find("CopyAgentUrl",true).Single();var point=tabs.TabPages[0].PointToClient(copy.PointToScreen(Point.Empty));
+                        if(point.Y+copy.Height>tabs.TabPages[0].ClientSize.Height)throw new Exception("Primary connection action is below the first-screen viewport");
+                    }
+                    if(i==3)await Diagnose();
                     using(var bitmap=new Bitmap(Width,Height)){DrawToBitmap(bitmap,new Rectangle(0,0,Width,Height));bitmap.Save(Path.Combine(TestDirectory,"gui-"+i+".png"));}
                 }
                 File.WriteAllText(Path.Combine(TestDirectory,"gui-result.txt"),"PASS: native GUI, authenticated snapshot, hidden token, redaction, all four sections rendered.\r\n"+meta.Text,Encoding.UTF8);
