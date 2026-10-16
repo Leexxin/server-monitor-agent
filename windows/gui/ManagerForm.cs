@@ -233,6 +233,8 @@ namespace SmaManager {
                 if(token.Text.Length!=0||!token.UseSystemPasswordChar)throw new Exception("Token must be hidden by default");
                 if(AgentClient.Redact(secret).Contains(secret))throw new Exception("Secret redaction failed");
                 if(url.Text.Length==0||meta.Text.Length==0||listen.Text.Length==0)throw new Exception("Missing connection or state controls");
+                string package=Environment.GetEnvironmentVariable("SMA_GUI_TEST_MSI");
+                if(!string.IsNullOrEmpty(package)&&Maintenance.VerifyMsi(package)!="0.3.1")throw new Exception("GUI MSI package verification failed");
                 Directory.CreateDirectory(TestDirectory);
                 for(int i=0;i<tabs.TabPages.Count;i++){
                     tabs.SelectedIndex=i;PerformLayout();Application.DoEvents();

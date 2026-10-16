@@ -51,7 +51,10 @@ Write-Host "PASS: authenticated metrics; CPU $usage%; logical CPUs $($second.cpu
 foreach ($warning in $second.errors) { Write-Warning "Collector $($warning.collector): $($warning.message)" }
 if ($Lifecycle) {
     $gui = Join-Path $env:ProgramFiles 'SMA/sma-gui.exe'
+    $menu = Join-Path ([Environment]::GetFolderPath('CommonPrograms')) 'SMA'
+    if (@(Get-ChildItem -LiteralPath $menu -Filter '*.lnk').Count -ne 1) { throw 'SMA Start menu entry is missing or duplicated.' }
     $guiOutput = if ($env:GITHUB_WORKSPACE) { Join-Path $env:GITHUB_WORKSPACE 'dist/gui-verification' } else { Join-Path $env:TEMP 'sma-gui-verification' }
+    $env:SMA_GUI_TEST_MSI = $MsiPath
     $guiProcess = Start-Process -FilePath $gui -ArgumentList @('--self-test',('"{0}"' -f $guiOutput)) -PassThru
     if (-not $guiProcess.WaitForExit(90000)) { $guiProcess.Kill(); throw 'GUI self-test timed out.' }
     if ($guiProcess.ExitCode -ne 0) { throw "GUI verification failed; see $guiOutput" }
