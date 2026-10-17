@@ -139,7 +139,7 @@ unset SMA_TOKEN
 
 ### 4.1 创建模板
 
-在 **数据采集（Data collection）→ 模板（Templates）→ 创建模板**：
+在 **数据采集（Data collection）→ 模板（Templates）→ 创建模板（Create template）**：
 
 1. 模板名称填 `SMA by HTTP`。
 2. 模板群组选择已有适当群组，或创建 `Templates/SMA`。
@@ -149,7 +149,7 @@ unset SMA_TOKEN
 
 ### 4.2 创建并关联主机
 
-在 **数据采集 → 主机（Hosts）→ 创建主机**：
+在 **数据采集（Data collection）→ 主机（Hosts）→ 创建主机（Create host）**：
 
 1. 主机名称填 `sma-node-01`；可见名称可填便于识别的中文名称。
 2. 主机群组选择或创建 `SMA servers`。
@@ -174,7 +174,16 @@ Secret text 用于遮蔽界面值，不是网络加密，也不能代替对 Zabb
 
 ## 5. 创建 HTTP 主监控项
 
-进入 **数据采集 → 模板 → SMA by HTTP → 监控项（Items）→ 创建监控项**，填写：
+英文界面操作路径为 **Data collection → Templates → 在 SMA by HTTP 所在行点击 Items → Create item**。具体位置如下：
+
+1. 展开左侧 **Data collection**，点击 **Templates**。
+2. 在模板列表上方的 **Name** 筛选框输入 `SMA by HTTP`，点击 **Apply**。
+3. 找到 `SMA by HTTP` 所在行，点击这一行的 **Items** 链接（通常带数量，如 `Items 0`）。点击模板名称会打开模板属性窗口；监控项入口在列表行的 Items 链接。
+4. 进入监控项列表后，点击右上角 **Create item**。
+
+`SMA by HTTP` 是第 4.1 节由你创建的自定义模板，不是 Zabbix 自带模板；如果列表中没有它，先点击 **Create template** 完成创建。如果左侧没有 Data collection，请先确认版本：Zabbix 6.0 的入口是 **Configuration → Templates**；7.0 使用 **Data collection → Templates**。如果整个配置菜单都不可见，再请管理员检查当前账号的角色和配置权限。
+
+上述列表入口可对照[官方 Templates 页面说明](https://www.zabbix.com/documentation/7.0/en/manual/web_interface/frontend_sections/data_collection/templates)。进入 **Create item** 后填写：
 
 | 字段 | 填写内容 |
 | --- | --- |
@@ -358,7 +367,7 @@ return sum;
 
 ### 8.1 在模板创建触发器
 
-进入 **数据采集 → 模板 → SMA by HTTP → 触发器（Triggers）→ 创建触发器**。以下表达式中的 `SMA by HTTP` 必须与模板技术名称一致，可用表达式构造器选择监控项避免手打错误。
+进入 **Data collection → Templates**，在 `SMA by HTTP` 所在行点击 **Triggers（触发器）**，再点击 **Create trigger（创建触发器）**。以下表达式中的 `SMA by HTTP` 必须与模板技术名称一致，可用表达式构造器选择监控项避免手打错误。
 
 | 名称 | 严重性示例 | 问题表达式 | 恢复方式 |
 | --- | --- | --- | --- |
