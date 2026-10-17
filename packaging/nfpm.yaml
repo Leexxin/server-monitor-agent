@@ -14,6 +14,12 @@ license: Proprietary
 umask: 0o022
 
 contents:
+  - src: docs/zabbix/template_sma_http_7.0.json
+    dst: /opt/sma/docs/zabbix/template_sma_http_7.0.json
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
   - src: docs/zabbix-integration.md
     dst: /opt/sma/docs/zabbix-integration.md
     file_info:

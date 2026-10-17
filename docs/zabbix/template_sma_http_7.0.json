@@ -1,0 +1,939 @@
+{
+  "zabbix_export": {
+    "version": "7.0",
+    "template_groups": [
+      {
+        "uuid": "6c54a73dada8447dafb730ab5f732eaa",
+        "name": "Templates/SMA"
+      }
+    ],
+    "templates": [
+      {
+        "uuid": "61ffa1194b1a4570a7f83bf3e789ffcb",
+        "template": "SMA by HTTP",
+        "name": "SMA by HTTP",
+        "description": "SMA v1 snapshot over HTTP. Linux and Windows core metrics, filesystem and disk discovery. Read docs/zabbix-integration.md before import. Set host macros SMA.URL and secret SMA.TOKEN; no real credentials included. CPU percentage uses per-core idle change over elapsed reception time, not delta-total. No notification actions are installed.",
+        "groups": [
+          {
+            "name": "Templates/SMA"
+          }
+        ],
+        "items": [
+          {
+            "uuid": "22e6f34e7f594e959b0e91d29b50073d",
+            "name": "SMA: Get snapshot",
+            "type": "HTTP_AGENT",
+            "key": "sma.snapshot",
+            "delay": "{$SMA.INTERVAL}",
+            "history": "1d",
+            "trends": "0",
+            "value_type": "TEXT",
+            "timeout": "{$SMA.TIMEOUT}",
+            "url": "{$SMA.URL}/v1/snapshot",
+            "status_codes": "200",
+            "follow_redirects": "NO",
+            "retrieve_mode": "BODY",
+            "request_method": "GET",
+            "headers": [
+              {
+                "name": "Authorization",
+                "value": "Bearer {$SMA.TOKEN}"
+              },
+              {
+                "name": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "verify_peer": "YES",
+            "verify_host": "YES",
+            "description": "Read-only GET. Configure SMA.URL and secret SMA.TOKEN on each host. Test-window macro overrides do not update saved host macros. HTTP 200 can include partial collector failures.",
+            "preprocessing": [
+              {
+                "type": "JAVASCRIPT",
+                "parameters": [
+                  "var s = JSON.parse(value);\nif (s.schemaVersion !== 'v1') throw 'Unsupported SMA schemaVersion';\nreturn value;"
+                ]
+              }
+            ],
+            "tags": [
+              {
+                "tag": "component",
+                "value": "raw"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "5bd9f053f5d248febf758bc307ae0282",
+                "expression": "nodata(/SMA by HTTP/sma.snapshot,3m)=1",
+                "name": "SMA: No snapshot for 3m",
+                "priority": "AVERAGE"
+              }
+            ]
+          },
+          {
+            "uuid": "2c6ecf4ba29b437bbedaa39521f138b4",
+            "name": "SMA: Hostname",
+            "type": "DEPENDENT",
+            "key": "sma.hostname",
+            "delay": "0",
+            "history": "7d",
+            "trends": "0",
+            "value_type": "CHAR",
+            "preprocessing": [
+              {
+                "type": "JSONPATH",
+                "parameters": [
+                  "$.host.hostname"
+                ]
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "hostname"
+              }
+            ]
+          },
+          {
+            "uuid": "a9eb19ecd8824950a50deb52a4f4734b",
+            "name": "SMA: CPU logical count",
+            "type": "DEPENDENT",
+            "key": "sma.cpu.count",
+            "delay": "0",
+            "history": "7d",
+            "trends": "365d",
+            "value_type": "UNSIGNED",
+            "preprocessing": [
+              {
+                "type": "JSONPATH",
+                "parameters": [
+                  "$.cpu.logicalCount"
+                ]
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "cpu"
+              }
+            ]
+          },
+          {
+            "uuid": "557cca42d2b743a5a2f4f2c614b372e1",
+            "name": "SMA: Memory total",
+            "type": "DEPENDENT",
+            "key": "sma.memory.total",
+            "delay": "0",
+            "history": "7d",
+            "trends": "365d",
+            "value_type": "UNSIGNED",
+            "preprocessing": [
+              {
+                "type": "JSONPATH",
+                "parameters": [
+                  "$.memory.totalBytes"
+                ]
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "memory"
+              }
+            ],
+            "units": "B"
+          },
+          {
+            "uuid": "e8d0775e764948f5b4a5ea66d05fb0d8",
+            "name": "SMA: Memory available",
+            "type": "DEPENDENT",
+            "key": "sma.memory.available",
+            "delay": "0",
+            "history": "7d",
+            "trends": "365d",
+            "value_type": "UNSIGNED",
+            "preprocessing": [
+              {
+                "type": "JSONPATH",
+                "parameters": [
+                  "$.memory.availableBytes"
+                ]
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "memory"
+              }
+            ],
+            "units": "B"
+          },
+          {
+            "uuid": "8ba7777529e0428f9136a3314575021c",
+            "name": "SMA: Uptime",
+            "type": "DEPENDENT",
+            "key": "sma.uptime",
+            "delay": "0",
+            "history": "7d",
+            "trends": "365d",
+            "value_type": "FLOAT",
+            "preprocessing": [
+              {
+                "type": "JSONPATH",
+                "parameters": [
+                  "$.uptimeSeconds"
+                ]
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "uptime"
+              }
+            ],
+            "units": "uptime"
+          },
+          {
+            "uuid": "7d69d343d23c4ae0bd3e9c5a6a6c600e",
+            "name": "SMA: Collector error count",
+            "type": "DEPENDENT",
+            "key": "sma.collector.errors",
+            "delay": "0",
+            "history": "7d",
+            "trends": "365d",
+            "value_type": "UNSIGNED",
+            "preprocessing": [
+              {
+                "type": "JSONPATH",
+                "parameters": [
+                  "$.errors.length()"
+                ]
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "collector"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "1beba492dce94dd282924eb1ee368452",
+                "expression": "min(/SMA by HTTP/sma.collector.errors,3m)>0",
+                "name": "SMA: Collector errors persist",
+                "priority": "WARNING"
+              }
+            ]
+          },
+          {
+            "uuid": "fb59259be7d043cd8325de45da1bf0d8",
+            "name": "SMA: Collector errors",
+            "type": "DEPENDENT",
+            "key": "sma.collector.errors.json",
+            "delay": "0",
+            "history": "7d",
+            "trends": "0",
+            "value_type": "TEXT",
+            "preprocessing": [
+              {
+                "type": "JSONPATH",
+                "parameters": [
+                  "$.errors"
+                ]
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "collector"
+              }
+            ]
+          },
+          {
+            "uuid": "69f9e4cd700b473886ed5bf48023601f",
+            "name": "SMA: OS",
+            "type": "DEPENDENT",
+            "key": "sma.os",
+            "delay": "0",
+            "history": "7d",
+            "trends": "0",
+            "value_type": "CHAR",
+            "preprocessing": [
+              {
+                "type": "JSONPATH",
+                "parameters": [
+                  "$.host.os"
+                ],
+                "error_handler": "DISCARD_VALUE"
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "os"
+              }
+            ]
+          },
+          {
+            "uuid": "478c24a33e3040d8902fef6037341dff",
+            "name": "SMA: Architecture",
+            "type": "DEPENDENT",
+            "key": "sma.architecture",
+            "delay": "0",
+            "history": "7d",
+            "trends": "0",
+            "value_type": "CHAR",
+            "preprocessing": [
+              {
+                "type": "JSONPATH",
+                "parameters": [
+                  "$.host.architecture"
+                ],
+                "error_handler": "DISCARD_VALUE"
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "architecture"
+              }
+            ]
+          },
+          {
+            "uuid": "0d9305d8666d401387fa563bed11526e",
+            "name": "SMA: Agent version",
+            "type": "DEPENDENT",
+            "key": "sma.agent.version",
+            "delay": "0",
+            "history": "7d",
+            "trends": "0",
+            "value_type": "CHAR",
+            "preprocessing": [
+              {
+                "type": "JSONPATH",
+                "parameters": [
+                  "$.agentVersion"
+                ],
+                "error_handler": "DISCARD_VALUE"
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "agent"
+              }
+            ]
+          },
+          {
+            "uuid": "c637ef815ca740dc8cb43eb372e1721d",
+            "name": "SMA: Memory used percent",
+            "type": "DEPENDENT",
+            "key": "sma.memory.used.pct",
+            "delay": "0",
+            "history": "7d",
+            "trends": "365d",
+            "value_type": "FLOAT",
+            "preprocessing": [
+              {
+                "type": "JAVASCRIPT",
+                "parameters": [
+                  "var s = JSON.parse(value), m = s.memory;\nif (!m || typeof m.totalBytes !== 'number' || m.totalBytes <= 0 ||\n    typeof m.availableBytes !== 'number' || m.availableBytes < 0 ||\n    m.availableBytes > m.totalBytes) throw 'Invalid or missing memory data';\nreturn 100 * (1 - m.availableBytes / m.totalBytes);"
+                ]
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "memory"
+              }
+            ],
+            "units": "%",
+            "triggers": [
+              {
+                "uuid": "ea5c472173f74d1db66e341efa8fe381",
+                "expression": "min(/SMA by HTTP/sma.memory.used.pct,5m)>{$SMA.MEM.WARN}",
+                "name": "SMA: Memory usage high",
+                "priority": "WARNING",
+                "recovery_mode": "RECOVERY_EXPRESSION",
+                "recovery_expression": "max(/SMA by HTTP/sma.memory.used.pct,5m)<{$SMA.MEM.RECOVER}"
+              },
+              {
+                "uuid": "1438033ad6f3466ebc1f4aa6829bc9bb",
+                "expression": "nodata(/SMA by HTTP/sma.memory.used.pct,3m)=1",
+                "name": "SMA: Memory data missing",
+                "priority": "WARNING"
+              }
+            ]
+          },
+          {
+            "uuid": "1b6640ab77be46ada51c22e13d94159b",
+            "name": "SMA: CPU used percent",
+            "type": "DEPENDENT",
+            "key": "sma.cpu.used.pct",
+            "delay": "0",
+            "history": "7d",
+            "trends": "365d",
+            "value_type": "FLOAT",
+            "preprocessing": [
+              {
+                "type": "JAVASCRIPT",
+                "parameters": [
+                  "var s = JSON.parse(value), c = s.cpu;\nif (!c || typeof c.logicalCount !== 'number' || c.logicalCount <= 0 || !c.seconds)\n    throw 'Invalid or missing CPU data';\nvar idle = 0, rows = 0;\nfor (var name in c.seconds) {\n    if (!Object.prototype.hasOwnProperty.call(c.seconds, name)) continue;\n    var n = c.seconds[name].idle;\n    if (typeof n !== 'number' || !isFinite(n) || n < 0) throw 'Invalid CPU idle time';\n    idle += n; rows++;\n}\nif (!rows) throw 'CPU list empty';\nif (Object.prototype.hasOwnProperty.call(c.seconds, 'total')) {\n    if (rows !== 1) throw 'Mixed aggregate and per-core CPU data';\n} else if (rows !== c.logicalCount) throw 'CPU count mismatch';\nreturn idle / c.logicalCount;"
+                ]
+              },
+              {
+                "type": "CHANGE_PER_SECOND",
+                "parameters": [
+                  ""
+                ]
+              },
+              {
+                "type": "JAVASCRIPT",
+                "parameters": [
+                  "var pct = 100 * (1 - Number(value));\nif (!isFinite(pct) || pct < 0 || pct > 100) throw 'CPU sample outside 0..100; wait for stable samples';\nreturn pct;"
+                ]
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "cpu"
+              }
+            ],
+            "units": "%",
+            "description": "100 * (1 - change_per_second(sum(idle)/logicalCount)). Requires two samples and stable CPU topology; accounts iowait as non-idle. Sampling and network timing may differ from delta-total accounting. Restart/counter decrease rebuilds baseline. No CPU threshold trigger is enabled by this template."
+          },
+          {
+            "uuid": "821b6d5e583e4a1284a1838027fd9622",
+            "name": "SMA: Load 1m",
+            "type": "DEPENDENT",
+            "key": "sma.load1",
+            "delay": "0",
+            "history": "7d",
+            "trends": "365d",
+            "value_type": "FLOAT",
+            "preprocessing": [
+              {
+                "type": "JSONPATH",
+                "parameters": [
+                  "$.load.load1"
+                ],
+                "error_handler": "DISCARD_VALUE"
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "load1"
+              }
+            ],
+            "description": "Optional Linux load average, not a percentage. Missing on Windows; discarded without storing a fake zero."
+          },
+          {
+            "uuid": "bb6e3bb17ba0482daecb38d9511e7f5d",
+            "name": "SMA: Load 5m",
+            "type": "DEPENDENT",
+            "key": "sma.load5",
+            "delay": "0",
+            "history": "7d",
+            "trends": "365d",
+            "value_type": "FLOAT",
+            "preprocessing": [
+              {
+                "type": "JSONPATH",
+                "parameters": [
+                  "$.load.load5"
+                ],
+                "error_handler": "DISCARD_VALUE"
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "load5"
+              }
+            ],
+            "description": "Optional Linux load average, not a percentage. Missing on Windows; discarded without storing a fake zero."
+          },
+          {
+            "uuid": "3204c5ef6b914331b332a14ff1e00440",
+            "name": "SMA: Load 15m",
+            "type": "DEPENDENT",
+            "key": "sma.load15",
+            "delay": "0",
+            "history": "7d",
+            "trends": "365d",
+            "value_type": "FLOAT",
+            "preprocessing": [
+              {
+                "type": "JSONPATH",
+                "parameters": [
+                  "$.load.load15"
+                ],
+                "error_handler": "DISCARD_VALUE"
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "load15"
+              }
+            ],
+            "description": "Optional Linux load average, not a percentage. Missing on Windows; discarded without storing a fake zero."
+          },
+          {
+            "uuid": "7ab855e1996b48d587feb6baf8513a44",
+            "name": "SMA: System filesystem used percent",
+            "type": "DEPENDENT",
+            "key": "sma.fs.system.used.pct",
+            "delay": "0",
+            "history": "7d",
+            "trends": "365d",
+            "value_type": "FLOAT",
+            "preprocessing": [
+              {
+                "type": "JAVASCRIPT",
+                "parameters": [
+                  "var s = JSON.parse(value), mount = s.host && s.host.systemMountpoint;\nif (!mount) {\n    if (s.host && s.host.os === 'windows') throw 'Windows systemMountpoint missing';\n    mount = '/';\n}\nvar fs = s.filesystems || [];\nfor (var i = 0; i < fs.length; i++) {\n    var f = fs[i];\n    if (f.mountpoint !== mount) continue;\n    if (typeof f.sizeBytes !== 'number' || f.sizeBytes <= 0 ||\n        typeof f.availableBytes !== 'number' || f.availableBytes < 0 ||\n        f.availableBytes > f.sizeBytes) throw 'Invalid system filesystem data';\n    return 100 * (1 - f.availableBytes / f.sizeBytes);\n}\nthrow 'System filesystem missing';"
+                ]
+              }
+            ],
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "tags": [
+              {
+                "tag": "component",
+                "value": "fs"
+              }
+            ],
+            "units": "%",
+            "triggers": [
+              {
+                "uuid": "98deb7c600994f2d8b08e57bcd6c1d6c",
+                "expression": "nodata(/SMA by HTTP/sma.fs.system.used.pct,3m)=1",
+                "name": "SMA: System filesystem data missing",
+                "priority": "WARNING"
+              }
+            ]
+          }
+        ],
+        "discovery_rules": [
+          {
+            "uuid": "c905ca97c3cf4afeab14b743025ed5ee",
+            "name": "SMA: Filesystem discovery",
+            "type": "DEPENDENT",
+            "key": "sma.fs.discovery",
+            "delay": "0",
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "lifetime": "7d",
+            "preprocessing": [
+              {
+                "type": "JAVASCRIPT",
+                "parameters": [
+                  "var s = JSON.parse(value), errors = s.errors || [];\nfor (var i = 0; i < errors.length; i++) {\n    if (errors[i].collector === 'filesystem') throw 'Collector failed; preserve discovery resources';\n}\nif (!Array.isArray(s.filesystems)) throw 'Discovery array missing';\nreturn JSON.stringify(s.filesystems);"
+                ]
+              }
+            ],
+            "lld_macro_paths": [
+              {
+                "lld_macro": "{#SMA.MOUNT}",
+                "path": "$.mountpoint"
+              },
+              {
+                "lld_macro": "{#SMA.FSTYPE}",
+                "path": "$.filesystemType"
+              }
+            ],
+            "item_prototypes": [
+              {
+                "uuid": "0f4f0efe3510415fac0f4e0588e56240",
+                "name": "SMA: FS {#SMA.MOUNT}: Size",
+                "type": "DEPENDENT",
+                "key": "sma.fs.size[\"{#SMA.MOUNT}\"]",
+                "delay": "0",
+                "history": "7d",
+                "trends": "365d",
+                "value_type": "UNSIGNED",
+                "master_item": {
+                  "key": "sma.snapshot"
+                },
+                "preprocessing": [
+                  {
+                    "type": "JSONPATH",
+                    "parameters": [
+                      "$.filesystems[?(@.mountpoint == \"{#SMA.MOUNT}\")].sizeBytes.first()"
+                    ]
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "filesystem"
+                  }
+                ],
+                "units": "B"
+              },
+              {
+                "uuid": "bea264a34f1a4d8d9d75c50f406b5c44",
+                "name": "SMA: FS {#SMA.MOUNT}: Available",
+                "type": "DEPENDENT",
+                "key": "sma.fs.available[\"{#SMA.MOUNT}\"]",
+                "delay": "0",
+                "history": "7d",
+                "trends": "365d",
+                "value_type": "UNSIGNED",
+                "master_item": {
+                  "key": "sma.snapshot"
+                },
+                "preprocessing": [
+                  {
+                    "type": "JSONPATH",
+                    "parameters": [
+                      "$.filesystems[?(@.mountpoint == \"{#SMA.MOUNT}\")].availableBytes.first()"
+                    ]
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "filesystem"
+                  }
+                ],
+                "units": "B"
+              },
+              {
+                "uuid": "615ed57293874cba92d1274dd99f09a3",
+                "name": "SMA: FS {#SMA.MOUNT}: Used percent",
+                "type": "DEPENDENT",
+                "key": "sma.fs.used.pct[\"{#SMA.MOUNT}\"]",
+                "delay": "0",
+                "history": "7d",
+                "trends": "365d",
+                "value_type": "FLOAT",
+                "master_item": {
+                  "key": "sma.snapshot"
+                },
+                "preprocessing": [
+                  {
+                    "type": "JSONPATH",
+                    "parameters": [
+                      "$.filesystems[?(@.mountpoint == \"{#SMA.MOUNT}\")].first()"
+                    ]
+                  },
+                  {
+                    "type": "JAVASCRIPT",
+                    "parameters": [
+                      "var f = JSON.parse(value);\nif (typeof f.sizeBytes !== 'number' || f.sizeBytes <= 0 ||\n    typeof f.availableBytes !== 'number' || f.availableBytes < 0 ||\n    f.availableBytes > f.sizeBytes) throw 'Invalid filesystem data';\nreturn 100 * (1 - f.availableBytes / f.sizeBytes);"
+                    ]
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "filesystem"
+                  }
+                ],
+                "units": "%",
+                "trigger_prototypes": [
+                  {
+                    "uuid": "32adb587161a4218a9cd4c008a6a7f17",
+                    "expression": "min(/SMA by HTTP/sma.fs.used.pct[\"{#SMA.MOUNT}\"],5m)>{$SMA.FS.WARN}",
+                    "name": "SMA: FS {#SMA.MOUNT}: Space usage high",
+                    "priority": "WARNING",
+                    "recovery_mode": "RECOVERY_EXPRESSION",
+                    "recovery_expression": "max(/SMA by HTTP/sma.fs.used.pct[\"{#SMA.MOUNT}\"],5m)<{$SMA.FS.RECOVER}"
+                  }
+                ]
+              }
+            ],
+            "filter": {
+              "evaltype": "AND",
+              "conditions": [
+                {
+                  "macro": "{#SMA.MOUNT}",
+                  "value": "{$SMA.FS.MATCHES}",
+                  "operator": "MATCHES_REGEX",
+                  "formulaid": "A"
+                },
+                {
+                  "macro": "{#SMA.FSTYPE}",
+                  "value": "{$SMA.FS.FSTYPE.NOT_MATCHES}",
+                  "operator": "NOT_MATCHES_REGEX",
+                  "formulaid": "B"
+                }
+              ]
+            },
+            "enabled_lifetime_type": "DISABLE_AFTER",
+            "enabled_lifetime": "1d"
+          },
+          {
+            "uuid": "8fb415487b294ef0ae8b3e07d9acc2f2",
+            "name": "SMA: Disk discovery",
+            "type": "DEPENDENT",
+            "key": "sma.disk.discovery",
+            "delay": "0",
+            "master_item": {
+              "key": "sma.snapshot"
+            },
+            "lifetime": "7d",
+            "preprocessing": [
+              {
+                "type": "JAVASCRIPT",
+                "parameters": [
+                  "var s = JSON.parse(value), errors = s.errors || [];\nfor (var i = 0; i < errors.length; i++) {\n    if (errors[i].collector === 'disk') throw 'Collector failed; preserve discovery resources';\n}\nif (!Array.isArray(s.disks)) throw 'Discovery array missing';\nreturn JSON.stringify(s.disks);"
+                ]
+              }
+            ],
+            "lld_macro_paths": [
+              {
+                "lld_macro": "{#SMA.DEVICE}",
+                "path": "$.device"
+              }
+            ],
+            "item_prototypes": [
+              {
+                "uuid": "1002b2efb81a431488a3918154c4c1a2",
+                "name": "SMA: Disk {#SMA.DEVICE}: Read bytes per second",
+                "type": "DEPENDENT",
+                "key": "sma.disk.read.bps[\"{#SMA.DEVICE}\"]",
+                "delay": "0",
+                "history": "7d",
+                "trends": "365d",
+                "value_type": "FLOAT",
+                "master_item": {
+                  "key": "sma.snapshot"
+                },
+                "preprocessing": [
+                  {
+                    "type": "JSONPATH",
+                    "parameters": [
+                      "$.disks[?(@.device == \"{#SMA.DEVICE}\")].readBytes.first()"
+                    ]
+                  },
+                  {
+                    "type": "CHANGE_PER_SECOND",
+                    "parameters": [
+                      ""
+                    ]
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "disk"
+                  }
+                ],
+                "units": "Bps"
+              },
+              {
+                "uuid": "38172f831b0c441a9ee802c5b0368dce",
+                "name": "SMA: Disk {#SMA.DEVICE}: Write bytes per second",
+                "type": "DEPENDENT",
+                "key": "sma.disk.write.bps[\"{#SMA.DEVICE}\"]",
+                "delay": "0",
+                "history": "7d",
+                "trends": "365d",
+                "value_type": "FLOAT",
+                "master_item": {
+                  "key": "sma.snapshot"
+                },
+                "preprocessing": [
+                  {
+                    "type": "JSONPATH",
+                    "parameters": [
+                      "$.disks[?(@.device == \"{#SMA.DEVICE}\")].writtenBytes.first()"
+                    ]
+                  },
+                  {
+                    "type": "CHANGE_PER_SECOND",
+                    "parameters": [
+                      ""
+                    ]
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "disk"
+                  }
+                ],
+                "units": "Bps"
+              },
+              {
+                "uuid": "af53d04c783d4422aa7312d6cd1306da",
+                "name": "SMA: Disk {#SMA.DEVICE}: Read operations per second",
+                "type": "DEPENDENT",
+                "key": "sma.disk.read.iops[\"{#SMA.DEVICE}\"]",
+                "delay": "0",
+                "history": "7d",
+                "trends": "365d",
+                "value_type": "FLOAT",
+                "master_item": {
+                  "key": "sma.snapshot"
+                },
+                "preprocessing": [
+                  {
+                    "type": "JSONPATH",
+                    "parameters": [
+                      "$.disks[?(@.device == \"{#SMA.DEVICE}\")].readsCompleted.first()"
+                    ]
+                  },
+                  {
+                    "type": "CHANGE_PER_SECOND",
+                    "parameters": [
+                      ""
+                    ]
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "disk"
+                  }
+                ],
+                "units": "ops/s"
+              },
+              {
+                "uuid": "3b3a8f4525cc4954b443af33cd81287a",
+                "name": "SMA: Disk {#SMA.DEVICE}: Write operations per second",
+                "type": "DEPENDENT",
+                "key": "sma.disk.write.iops[\"{#SMA.DEVICE}\"]",
+                "delay": "0",
+                "history": "7d",
+                "trends": "365d",
+                "value_type": "FLOAT",
+                "master_item": {
+                  "key": "sma.snapshot"
+                },
+                "preprocessing": [
+                  {
+                    "type": "JSONPATH",
+                    "parameters": [
+                      "$.disks[?(@.device == \"{#SMA.DEVICE}\")].writesCompleted.first()"
+                    ]
+                  },
+                  {
+                    "type": "CHANGE_PER_SECOND",
+                    "parameters": [
+                      ""
+                    ]
+                  }
+                ],
+                "tags": [
+                  {
+                    "tag": "component",
+                    "value": "disk"
+                  }
+                ],
+                "units": "ops/s"
+              }
+            ],
+            "enabled_lifetime_type": "DISABLE_AFTER",
+            "enabled_lifetime": "1d"
+          }
+        ],
+        "macros": [
+          {
+            "macro": "{$SMA.URL}",
+            "value": "",
+            "description": "Required: actual SMA base URL, no trailing slash. Set on the host."
+          },
+          {
+            "macro": "{$SMA.TOKEN}",
+            "value": "",
+            "description": "Required: existing SMA token, without Bearer prefix. Set as Secret text on the host.",
+            "type": "SECRET_TEXT"
+          },
+          {
+            "macro": "{$SMA.INTERVAL}",
+            "value": "30s",
+            "description": "Snapshot polling interval."
+          },
+          {
+            "macro": "{$SMA.TIMEOUT}",
+            "value": "5s",
+            "description": "HTTP request timeout."
+          },
+          {
+            "macro": "{$SMA.MEM.WARN}",
+            "value": "90",
+            "description": "Memory warning threshold in percent."
+          },
+          {
+            "macro": "{$SMA.MEM.RECOVER}",
+            "value": "85",
+            "description": "Memory recovery threshold; must be lower than warning."
+          },
+          {
+            "macro": "{$SMA.FS.WARN}",
+            "value": "85",
+            "description": "Filesystem warning threshold in percent."
+          },
+          {
+            "macro": "{$SMA.FS.RECOVER}",
+            "value": "80",
+            "description": "Filesystem recovery threshold; must be lower than warning."
+          },
+          {
+            "macro": "{$SMA.FS.MATCHES}",
+            "value": ".+",
+            "description": "Regex of mountpoints included in discovery."
+          },
+          {
+            "macro": "{$SMA.FS.FSTYPE.NOT_MATCHES}",
+            "value": "^(tmpfs|devtmpfs|proc|sysfs|cgroup2?|overlay|squashfs|debugfs|tracefs|securityfs|pstore|autofs|mqueue|hugetlbfs|fusectl|configfs|ramfs|nsfs)$",
+            "description": "Exclude transient/pseudo filesystem types. Change per host if these are intentional monitoring targets."
+          }
+        ]
+      }
+    ]
+  }
+}

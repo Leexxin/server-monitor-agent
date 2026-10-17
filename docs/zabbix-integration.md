@@ -2,9 +2,55 @@
 
 本文面向第一次使用 Zabbix 的维护者，从概念、连通性验证、界面配置到告警验收，完成 SMA 指标接入。示例以 **Zabbix 7.0 的界面与表达式**为基准，其他版本请对照对应版本官方手册，菜单中文翻译可能略有不同。核对日期：2026-10-18。
 
-主流程面向 Linux SMA，使用 `GET /v1/snapshot`。Windows 的内存和运行时间可以复用；CPU 汇总结构、系统盘和不支持字段见[Windows 接口说明](windows/README.md#接口对接)。本文提供手工配置教程，不包含可直接导入的 Zabbix 模板文件。
+主流程面向 Linux SMA，使用 `GET /v1/snapshot`。Windows 的内存和运行时间可以复用；CPU 汇总结构、系统盘和不支持字段见[Windows 接口说明](windows/README.md#接口对接)。本文提供可直接导入的 JSON 模板及手工配置教程。希望快速接入时，先按下面的“直接导入”操作，无需逐个创建 Items。
 
 验证边界：已对照仓库接口和 Zabbix 官方资料编写；未连接实际 Zabbix Server/Proxy，未进行目标环境界面配置、模板导入、通知送达或生产部署验证。文中阈值为入门示例，需要结合业务调整。
+
+## 直接导入：无需逐个创建 Items
+
+导入文件：[template_sma_http_7.0.json](zabbix/template_sma_http_7.0.json)。这是 Zabbix 原生 JSON 模板格式，声明版本为 `7.0`；本次按 7.0 规则编写，其他版本需使用对应版本的导入预览核对，不支持把 version 字段改小后当作兼容模板。服务器安装包交付位置为 `/opt/sma/docs/zabbix/template_sma_http_7.0.json`，从源码可直接取本文件，不需要升级 SMA。
+
+### 英文界面导入步骤
+
+1. **Data collection → Templates → Import**，选择上述 `.json` 文件。无需把 JSON 粘贴到 Item 或 API 表单。
+2. 勾选 **Create new** 和 **Update existing**；**Delete missing 保持不勾选**。如果已有手工建立的 `SMA by HTTP`，先在 Templates 勾选它并 **Export** 保存备份，再查看 Import 预览。导入会匹配同名模板及同键值监控项并更新配置；预览应保留既有 `sma.snapshot`，不会另加一份同键值项。不符合预期时取消导入，保留错误信息进一步核对。模板名称、UUID 和 Key 是后续更新的标识，不要随意修改文件。
+3. 在预览确认目标为 **SMA by HTTP**，检查新增与更新内容后点击 **Import**。不要同时关联两套包含 `sma.snapshot` 的模板。如果旧模板本来就是 SMA by HTTP，无需解除关联后重新添加。
+4. **Data collection → Hosts → 点击你的主机名称 → Host → Templates**，关联 **SMA by HTTP**；已有此关联则保持。保留正确的 **Monitored by**。模板导入只创建配置，不会自动建立你的服务器主机或修改 SMA 服务。
+5. 在该主机 **Macros → Host macros** 中设置 `{$SMA.URL}` 为实际基地址、`{$SMA.TOKEN}` 为已有 Token 原文（Secret text），点击 **Update**。原来正确的这两个主机宏无需更改；模板中的空值不会覆盖主机级值。URL 不带 `/v1/snapshot`、末尾斜杠或空白，Token 不含 Bearer 前缀，不能继续使用示例 IP。
+6. **Data collection → Hosts → 主机所在行的 Items**，勾选 **SMA: Get snapshot**，点击 **Execute now**；等待配置同步及两轮采样，再去 **Monitoring → Latest data** 选择主机查看。文件系统和磁盘 Items 由 Discovery 自动创建，可能晚于主项出现。
+
+导入规则和预览含义见[官方模板导入说明](https://www.zabbix.com/documentation/7.0/en/manual/xml_export_import/templates)。界面菜单看不到或按钮不可用时，请检查账号配置权限。
+
+### 导入后包含哪些内容
+
+- 17 个固定 Items：JSON 快照、主机名/平台/版本、逻辑 CPU 数、CPU 使用率、内存总量/可用量/使用率、运行时间、采集错误数及明细、Linux Load 1/5/15 分钟、系统盘使用率。
+- 2 条 Discovery rules、7 个 Item prototypes：每个文件系统的总量/可用量/使用率，以及每个磁盘的读写 Bps 和读写 IOPS。Windows 按实际盘符和设备名发现；系统盘使用 `host.systemMountpoint`，Linux 旧版本缺少此元数据时回退 `/`。
+- 5 个固定 Triggers：快照 3 分钟无数据、内存使用率偏高、内存数据缺失、采集错误持续、系统盘数据缺失；每个被发现文件系统另有空间告警原型。
+- 不包含发送通知的 Actions、Media types 或任何真实凭据。收到通知仍需按第 8.2 节配置用户、媒介及动作。
+
+### 可调宏、指标口径和限制
+
+| 主机宏 | 默认值 | 用途 |
+| --- | --- | --- |
+| `{$SMA.URL}` | 空 | 必填，实际基地址 |
+| `{$SMA.TOKEN}` | 空，Secret text | 必填，已有 Token 原文 |
+| `{$SMA.INTERVAL}` / `{$SMA.TIMEOUT}` | `30s` / `5s` | 正式轮询周期和 HTTP 超时 |
+| `{$SMA.MEM.WARN}` / `{$SMA.MEM.RECOVER}` | `90` / `85` | 内存百分比问题/恢复阈值 |
+| `{$SMA.FS.WARN}` / `{$SMA.FS.RECOVER}` | `85` / `80` | 文件系统百分比问题/恢复阈值 |
+| `{$SMA.FS.MATCHES}` | `.+` | 挂载点包含正则 |
+| `{$SMA.FS.FSTYPE.NOT_MATCHES}` | 文件内列出的伪文件系统正则 | 默认排除 tmpfs、overlay、squashfs 等；容器根卷或 OpenWrt overlay 是监控目标时，需从排除正则移除对应类型 |
+
+内存和文件系统百分比使用 availableBytes；无效或缺失字段报错，不补正常零值。Windows 不支持的 swap、inode 等字段没有创建 Items；Linux Load 和旧 SMA 缺失的平台/版本信息会丢弃缺失样本，不产生假零。JSON 累计值经 JavaScript/JSONPath 解析超过 `2^53-1` 时可能损失精度，极大计数器场景应另行验证。
+
+导入模板的 CPU 使用率采用单个依赖项管线：先求 `sum(idle) / logicalCount`，再 Change per second，最后 `100 × (1 - idle_rate)`。它使用 Zabbix 收到样本的时间差，不同于第 7 节用 Δtotal 归一化的教学公式；应保持 CPU 数稳定，网络时延变化和 CPU 热插拔可能造成异常样本。首次、重启计数回退后需要两次有效样本；超出 0～100 的结果报错，不强行显示为正常。模板未默认创建 CPU 阈值告警，需在实际环境验证后配置。
+
+Discovery 在对应采集器明确报错时停止更新结果，保留既有资源；合法列表中消失的资源在 1 天后禁用、7 天后删除。过滤条件变化也会影响被发现资源，批量调整前应核对预览。默认数值历史 7 天、趋势 365 天，原始快照历史 1 天；Zabbix 全局 housekeeping 覆盖设置可能改变实际保留时间。
+
+### Test 成功但 History 没数据
+
+Test 窗口手工填入的宏只用于当次测试，**不会保存到主机，也不会将测试值写入历史**。正式采集需核对主机已保存的 URL/Token、Monitored by 和 Enabled。若出现 `Connection timed out after 3001 milliseconds`，先核对正式地址与测试地址、实际 Server/Proxy 是否一致，再检查生效超时；增大超时不能修复错误地址或防火墙阻断。
+
+模板已执行本地结构和预处理回归检查；尚未在实际 Zabbix Server 上执行 configuration.import、LLD 生成和通知验收。导入预览成功、已部署和通知送达是不同验证阶段，需按第 9 节继续验收。
 
 ## 目录
 
@@ -422,7 +468,7 @@ return sum;
 
 新增主机 → 关联 `SMA by HTTP` → 填该机 `{$SMA.URL}` 和 Secret text `{$SMA.TOKEN}` → 选择正确 Server/Proxy → 从采集方验证 → 查看最新数据。无需为每台主机复制一套模板或修改每个 URL。
 
-模板导出用于共享前，应确认没有真实 Token、内部敏感地址或测试阈值。本文不声称已经生成或验证导出模板。
+模板导出用于共享前，应确认没有真实 Token、内部敏感地址或测试阈值。本仓库提供上方 JSON 导入模板；手工改过的模板如需共享，仍需另行核对导出结果与凭据。
 
 ### 10.2 从一个挂载点扩展到全部挂载点
 
