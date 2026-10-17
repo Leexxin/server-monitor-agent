@@ -1,5 +1,10 @@
 # 变更记录
 
+## v0.2.7
+
+- 修复 iStoreOS/OpenWrt 缺少 `od` 时无法生成 Bearer Token 的问题；使用安装器已要求的 `sha256sum` 处理 32 字节系统随机数。
+- 增加无 `od` 的生命周期回归测试，并验证随机数读取长度。原有配置和 Token 不变，Agent API 不变。
+
 ## v0.2.6
 
 - 修复 iStoreOS/OpenWrt 通用包安装依赖系统中可能不存在的 `install` 命令；一键安装器同步改为使用 BusyBox 常见命令。
