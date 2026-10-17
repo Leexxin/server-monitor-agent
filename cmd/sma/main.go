@@ -61,7 +61,7 @@ func run(rootCtx context.Context, started func()) (result error) {
 		logger.Error("read discovery report token", "error", err)
 		return err
 	}
-	reporter, err := discovery.NewReporter(cfg.DiscoveryReportURL, reportToken)
+	reporter, err := discovery.NewReporter(cfg.DiscoveryReportURL, reportToken, buildinfo.Version)
 	if err != nil {
 		logger.Error("configure discovery reporter", "error", err)
 		return err
