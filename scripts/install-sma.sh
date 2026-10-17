@@ -190,6 +190,12 @@ case "$installed" in
     "$version"|"$version"-*) same_version=1 ;;
     *) same_version=0 ;;
 esac
+if [ "$package_kind" = tar ] && [ "$same_version" -eq 1 ]; then
+    if [ ! -x /opt/sma/bin/sma ] || [ ! -r /opt/sma/config/sma.env ] || [ ! -x /etc/init.d/sma ]; then
+        log 'Existing universal installation is incomplete; reinstalling the target version.'
+        same_version=0
+    fi
+fi
 
 log "Detected: OS=${os_id:-unknown} arch=$machine package=$package_kind service=$service_manager installed=${installed:-none} target=$version"
 if [ "$same_version" -eq 1 ] && [ "$FORCE" -eq 0 ]; then
@@ -221,8 +227,10 @@ ctl_expected=$(awk '$2=="sma-ctl.sh" {print $1}' "$work_dir/sma-ctl.sh.sha256")
 printf '%s\n' "$ctl_expected" | grep -Eq '^[0-9a-f]{64}$' || fatal 'Invalid sma-ctl checksum.'
 ctl_actual=$(sha256sum "$work_dir/sma-ctl.sh" | awk '{print $1}')
 [ "$ctl_actual" = "$ctl_expected" ] || fatal 'sma-ctl checksum mismatch.'
-install -m 0755 "$work_dir/sma-ctl.sh" /opt/sma/bin/sma-ctl
-chown root:root /opt/sma/bin/sma-ctl
+cp "$work_dir/sma-ctl.sh" "/opt/sma/bin/sma-ctl.new.$$"
+chmod 0755 "/opt/sma/bin/sma-ctl.new.$$"
+chown root:root "/opt/sma/bin/sma-ctl.new.$$"
+mv -f "/opt/sma/bin/sma-ctl.new.$$" /opt/sma/bin/sma-ctl
 mkdir -p /usr/local/bin
 if [ ! -e /usr/local/bin/sma-ctl ] && [ ! -L /usr/local/bin/sma-ctl ]; then
     ln -s /opt/sma/bin/sma-ctl /usr/local/bin/sma-ctl

@@ -82,6 +82,9 @@ jobs:
       - name: Test versioned one-command installer on Linux
         run: sudo env SMA_RUN_INSTALL_TESTS=1 sh scripts/test-auto-installer-linux.sh "dist/share-v${{ steps.version.outputs.version }}" "${{ steps.version.outputs.version }}"
 
+      - name: Test universal tarball lifecycle on Linux
+        run: sudo env SMA_RUN_INSTALL_TESTS=1 sh scripts/test-universal-linux.sh "dist/packages/sma_${{ steps.version.outputs.version }}_linux_x86_64.tar.gz" "${{ steps.version.outputs.version }}"
+
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
