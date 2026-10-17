@@ -14,6 +14,12 @@ license: Proprietary
 umask: 0o022
 
 contents:
+  - src: docs/zabbix-integration.md
+    dst: /opt/sma/docs/zabbix-integration.md
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
   - src: docs/releases/v0.2.8.md
     dst: /opt/sma/docs/releases/v0.2.8.md
     file_info:

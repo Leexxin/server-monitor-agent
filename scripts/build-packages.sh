@@ -93,6 +93,7 @@ build_arch() {
     install -m 0644 docs/releases/*.md "$universal/docs/releases/"
     install -d -m 0755 "$universal/docs/windows"
     install -m 0644 docs/windows/README.md "$universal/docs/windows/README.md"
+    install -m 0644 docs/zabbix-integration.md "$universal/docs/zabbix-integration.md"
     install -m 0644 docs/api-integration.md "$universal/docs/api-integration.md"
     install -m 0644 docs/sma-center-version-metrics.md "$universal/docs/sma-center-version-metrics.md"
     install -m 0644 docs/server-monitor-agent-development.md "$universal/docs/server-monitor-agent-development.md"

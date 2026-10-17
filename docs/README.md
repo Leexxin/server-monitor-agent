@@ -12,6 +12,7 @@
 | iStoreOS/OpenWrt 的 procd 安装与运维 | [自动安装](automatic-installation.md)、[全生命周期操作](lifecycle.md) |
 | 原生 DEB/RPM/APK、通用包与监听配置 | [安装与卸载](installation.md) |
 | sma-center 配置后无法获取数据 | [连通性与鉴权排障](troubleshooting.md) |
+| Zabbix 新手知识、HTTP 接入、指标与告警验收 | [SMA 接入 Zabbix 指南](zabbix-integration.md) |
 | CPU、内存、磁盘接口与鉴权 | [指标接口对接](api-integration.md) |
 | sma-center 版本展示与指标卡片解析 | [sma-center 版本与指标解析](sma-center-version-metrics.md) |
 | 中间件、数据库、SFTP 自动发现与上报 | [自动发现接口对接](discovery-api-integration.md) |
