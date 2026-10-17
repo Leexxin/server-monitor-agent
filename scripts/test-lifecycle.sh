@@ -11,6 +11,7 @@ SMA_ROOT="$test_dir/agent"
 mkdir -p "$SMA_ROOT/config"
 # No privileged operations on the test host; real file permissions still apply.
 chown() { :; }
+od() { echo 'FAIL: od must not be required by token generation' >&2; return 127; }
 assert() { "$@" || { printf 'FAIL: %s\n' "$*" >&2; exit 1; }; }
 printf '# keep comment\nSMA_OPTS="--listen-address=127.0.0.1:9108 --discovery.enabled=true"\nSMA_CACHE_TTL=1s\n' > "$SMA_ROOT/config/sma.env"
 ensure_token > "$test_dir/output"

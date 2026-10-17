@@ -87,3 +87,7 @@ unset SMA_TOKEN
 ## iStoreOS 一键安装报 `install: not found`
 
 这是 v0.2.5 通用包安装脚本依赖 iStoreOS 可能未提供的 `install` 命令，并非下载或 SHA-256 校验失败。使用 v0.2.6 或更新版本的分享根目录 `install-sma.sh` 重新运行原一键命令；无需删除 `/opt/sma`。若仍失败，提交 `/var/log/sma-install.log` 的末尾日志（先删除 Token 等敏感值），并确认输出中的目标版本为 0.2.6 或更新。
+
+## iStoreOS 一键安装报 `od: not found`
+
+这是 v0.2.6 在创建 Bearer Token 时依赖目标系统未提供的 `od` 命令。使用 v0.2.7 或更新版本的分享根目录固定安装入口重试；该版本改用安装器已有的 `sha256sum`，不需要手动清理或重置 Token。若再次失败，提供脱敏安装日志，并检查日志中 `target=0.2.7` 或更新。

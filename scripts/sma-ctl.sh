@@ -101,11 +101,18 @@ safe_token_path() {
 }
 new_token() {
     token_tmp=$(mktemp "$(dirname "$token_file")/.sma-token.XXXXXX") || return 1
-    # 32 random bytes / 256 bits. No dependency on OpenSSL or Python.
+    # 32 random bytes / 256 bits. sha256sum is already required by the installer;
+    # od is optional and absent on some OpenWrt/BusyBox images.
     if ! dd if=/dev/urandom of="$token_tmp" bs=32 count=1 2>/dev/null; then
         rm -f "$token_tmp"; return 1
     fi
-    value=$(od -An -v -tx1 "$token_tmp" | tr -d ' \n')
+    if [ "$(wc -c < "$token_tmp" | tr -d '[:space:]')" -ne 32 ]; then
+        rm -f "$token_tmp"; fail '随机数读取不完整。'; return 1
+    fi
+    value=$(sha256sum "$token_tmp" | awk '{print $1}') || { rm -f "$token_tmp"; return 1; }
+    case "$value" in
+        *[!0-9a-f]*) rm -f "$token_tmp"; fail '生成随机 Token 失败。'; return 1 ;;
+    esac
     [ "${#value}" -eq 64 ] || { rm -f "$token_tmp"; fail '生成随机 Token 失败。'; return 1; }
     printf '%s\n' "$value" > "$token_tmp"
     unset value
