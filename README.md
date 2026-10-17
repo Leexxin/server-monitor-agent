@@ -41,6 +41,7 @@ Windows 推荐直接运行 MSI，安装完成打开“SMA 管理中心”。服�
 - [版本变更记录](CHANGELOG.md)
 - [开发设计](docs/server-monitor-agent-development.md)
 - [接口对接](docs/api-integration.md)
+- [sma-center 版本与指标解析](docs/sma-center-version-metrics.md)
 - [安装与卸载](docs/installation.md)
 - [自动安装](docs/automatic-installation.md)
 - [安装到卸载：全生命周期操作](docs/lifecycle.md)

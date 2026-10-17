@@ -13,6 +13,7 @@
 | 原生 DEB/RPM/APK、通用包与监听配置 | [安装与卸载](installation.md) |
 | sma-center 配置后无法获取数据 | [连通性与鉴权排障](troubleshooting.md) |
 | CPU、内存、磁盘接口与鉴权 | [指标接口对接](api-integration.md) |
+| sma-center 版本展示与指标卡片解析 | [sma-center 版本与指标解析](sma-center-version-metrics.md) |
 | 中间件、数据库、SFTP 自动发现与上报 | [自动发现接口对接](discovery-api-integration.md) |
 | 架构和开发设计 | [开发设计](server-monitor-agent-development.md) |
 | 修改、验证、Git 提交与发布规范 | [文档维护与发布](maintenance.md) |

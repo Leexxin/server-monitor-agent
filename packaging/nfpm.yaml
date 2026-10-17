@@ -80,6 +80,12 @@ contents:
       mode: 0644
       owner: root
       group: root
+  - src: docs/sma-center-version-metrics.md
+    dst: /opt/sma/docs/sma-center-version-metrics.md
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
   - src: docs/releases/v0.2.3.md
     dst: /opt/sma/docs/releases/v0.2.3.md
     file_info:

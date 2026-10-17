@@ -94,6 +94,7 @@ build_arch() {
     install -d -m 0755 "$universal/docs/windows"
     install -m 0644 docs/windows/README.md "$universal/docs/windows/README.md"
     install -m 0644 docs/api-integration.md "$universal/docs/api-integration.md"
+    install -m 0644 docs/sma-center-version-metrics.md "$universal/docs/sma-center-version-metrics.md"
     install -m 0644 docs/server-monitor-agent-development.md "$universal/docs/server-monitor-agent-development.md"
     install -m 0644 docs/installation.md "$universal/docs/installation.md"
     install -m 0644 docs/automatic-installation.md "$universal/docs/automatic-installation.md"
