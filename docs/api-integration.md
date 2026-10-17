@@ -130,6 +130,7 @@ Content-Type: application/json; charset=utf-8
 ```json
 {
   "schemaVersion": "v1",
+  "agentVersion": "v0.2.8",
   "timestamp": "2026-09-15T02:10:30.123456Z",
   "host": {
     "hostname": "node-01"
@@ -213,6 +214,7 @@ Content-Type: application/json; charset=utf-8
 | 字段 | 类型 | 必有 | 说明 |
 |---|---|---|---|
 | `schemaVersion` | string | 是 | 当前固定为 `v1` |
+| `agentVersion` | string | v0.2.8 起 | 生成该快照的 SMA 程序版本；旧版 Agent 不提供，调用方应兼容缺失 |
 | `timestamp` | string(date-time) | 是 | 本轮采集开始时间 |
 | `host.hostname` | string | 是 | Agent 所在主机的 hostname |
 | `cpu` | object | 否 | CPU Collector 启用且成功时存在 |
@@ -543,4 +545,4 @@ if memory and memory["totalBytes"]:
 - 调用方不应依赖 JSON 对象字段顺序或数组外部的响应头顺序。
 - 删除字段或改变单位需要升级新的 schemaVersion 和 API 路径。
 
-建议对接系统保存 Agent 的 `/version` 结果，出现数据解析问题时一并上报，便于定位版本差异。
+从 v0.2.8 起，快照直接带 `agentVersion`（如 `v0.2.8`），可用于资产展示与故障定位。旧版 Agent 没有此字段时，仍可调用 `/version` 查询；`agentVersion` 是程序版本，不是 `schemaVersion`，请勿用它判断字段结构兼容性。

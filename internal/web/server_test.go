@@ -50,6 +50,7 @@ func TestEndpoints(t *testing.T) {
 		{"/readyz", 200, `"status":"ready"`},
 		{"/version", 200, `"version":"test"`},
 		{"/v1/snapshot", 200, `"schemaVersion":"v1"`},
+		{"/v1/snapshot", 200, `"agentVersion":"test"`},
 		{"/metrics", 200, "sma_memory_total_bytes 1024"},
 	} {
 		req := httptest.NewRequest(http.MethodGet, test.path, nil)

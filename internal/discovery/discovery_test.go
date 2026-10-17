@@ -56,7 +56,7 @@ func TestParseScriptOutput(t *testing.T) {
 
 func TestServiceTriggersAndReports(t *testing.T) {
 	received := make(chan ReportPayload, 1)
-	reporter := &Reporter{endpoint: "https://receiver.invalid/discovery", token: "report-secret"}
+	reporter := &Reporter{endpoint: "https://receiver.invalid/discovery", token: "report-secret", version: "v0.2.8"}
 	reporter.client = &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		if r.Header.Get("Authorization") != "Bearer report-secret" {
 			t.Errorf("missing report token")
@@ -93,7 +93,7 @@ func TestServiceTriggersAndReports(t *testing.T) {
 	}
 	select {
 	case payload := <-received:
-		if payload.RunID != run.ID || payload.Result.Assets[0].Product != "nginx" {
+		if payload.RunID != run.ID || payload.AgentVersion != "v0.2.8" || payload.SchemaVersion != SchemaVersion || payload.Result.Assets[0].Product != "nginx" {
 			t.Fatalf("unexpected report payload: %#v", payload)
 		}
 	case <-time.After(time.Second):

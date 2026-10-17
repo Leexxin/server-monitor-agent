@@ -464,6 +464,7 @@ User-Agent: sma-discovery/1
 ```json
 {
   "schemaVersion": "v1",
+  "agentVersion": "v0.2.8",
   "runId": "6f60f134db4c707925c096b7",
   "status": "succeeded",
   "startedAt": "2026-09-18T03:20:30.124102Z",
@@ -483,7 +484,7 @@ User-Agent: sma-discovery/1
 }
 ```
 
-接收方返回任意 2xx 表示成功。Agent 不跟随 HTTP 重定向，单次上报超时为 10 秒，当前版本不自动重试；失败状态会保留在任务的 `report` 字段中。
+`agentVersion` 是发送本次报告的 SMA 程序版本（v0.2.8 起提供）；旧版 Agent 不提供时，接收方应允许字段缺失。它与表示上报结构的 `schemaVersion` 不同，不应混用。接收方返回任意 2xx 表示成功。Agent 不跟随 HTTP 重定向，单次上报超时为 10 秒，当前版本不自动重试；失败状态会保留在任务的 `report` 字段中。
 
 ## 15. 配置参数
 

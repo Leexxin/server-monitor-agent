@@ -6,6 +6,7 @@ const SchemaVersion = "v1"
 
 type Snapshot struct {
 	SchemaVersion string                     `json:"schemaVersion"`
+	AgentVersion  string                     `json:"agentVersion"`
 	Timestamp     time.Time                  `json:"timestamp"`
 	Host          Host                       `json:"host"`
 	CPU           *CPU                       `json:"cpu,omitempty"`

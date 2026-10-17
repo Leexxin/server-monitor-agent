@@ -15,11 +15,13 @@ import (
 type Reporter struct {
 	endpoint string
 	token    string
+	version  string
 	client   *http.Client
 }
 
 type ReportPayload struct {
 	SchemaVersion string     `json:"schemaVersion"`
+	AgentVersion  string     `json:"agentVersion"`
 	RunID         string     `json:"runId"`
 	Status        Status     `json:"status"`
 	StartedAt     *time.Time `json:"startedAt,omitempty"`
@@ -27,7 +29,7 @@ type ReportPayload struct {
 	Result        *Result    `json:"result"`
 }
 
-func NewReporter(endpoint, token string) (*Reporter, error) {
+func NewReporter(endpoint, token, version string) (*Reporter, error) {
 	if endpoint == "" {
 		return nil, nil
 	}
@@ -36,7 +38,7 @@ func NewReporter(endpoint, token string) (*Reporter, error) {
 		return nil, fmt.Errorf("discovery report URL must be an absolute http or https URL")
 	}
 	return &Reporter{
-		endpoint: endpoint, token: token,
+		endpoint: endpoint, token: token, version: version,
 		client: &http.Client{Timeout: 10 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 			return http.ErrUseLastResponse
 		}},
@@ -45,7 +47,7 @@ func NewReporter(endpoint, token string) (*Reporter, error) {
 
 func (r *Reporter) Send(ctx context.Context, run Run) error {
 	payload := ReportPayload{
-		SchemaVersion: SchemaVersion, RunID: run.ID, Status: run.Status,
+		SchemaVersion: SchemaVersion, AgentVersion: r.version, RunID: run.ID, Status: run.Status,
 		StartedAt: run.StartedAt, CompletedAt: run.CompletedAt, Result: run.Result,
 	}
 	body, err := json.Marshal(payload)

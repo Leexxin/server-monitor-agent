@@ -116,6 +116,7 @@ func (s *Server) snapshotJSON(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusServiceUnavailable, "snapshot_unavailable", "metric collection unavailable")
 		return
 	}
+	value.AgentVersion = s.build.Version
 	writeJSON(w, r, http.StatusOK, value)
 }
 

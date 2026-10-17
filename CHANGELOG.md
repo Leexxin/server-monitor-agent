@@ -1,5 +1,10 @@
 # 变更记录
 
+## v0.2.8
+
+- 主机 JSON 快照和自动发现主动上报新增顶层 `agentVersion`，方便 sma-center 与接收系统直接记录 SMA 程序版本。
+- 该字段不改变 `schemaVersion`、已有字段或 Bearer Token 格式；旧版 Agent 可能没有此字段。
+
 ## v0.2.7
 
 - 修复 iStoreOS/OpenWrt 缺少 `od` 时无法生成 Bearer Token 的问题；使用安装器已要求的 `sha256sum` 处理 32 字节系统随机数。
