@@ -60,8 +60,11 @@ done
 for source in "$script_dir/docs/releases/"*.md; do
     copy_file "$source" "$install_root/docs/releases/$(basename "$source")" 0644
 done
+mkdir -p "$install_root/docs/zabbix"
+chmod 0755 "$install_root/docs/zabbix"
+copy_file "$script_dir/docs/zabbix/template_sma_http_7.0.json" "$install_root/docs/zabbix/template_sma_http_7.0.json" 0644
 copy_file "$script_dir/docs/windows/README.md" "$install_root/docs/windows/README.md" 0644
-for name in api-integration sma-center-version-metrics server-monitor-agent-development installation automatic-installation lifecycle discovery-api-integration; do
+for name in zabbix-integration api-integration sma-center-version-metrics server-monitor-agent-development installation automatic-installation lifecycle discovery-api-integration; do
     copy_file "$script_dir/docs/$name.md" "$install_root/docs/$name.md" 0644
 done
 copy_file "$script_dir/discovery/common-services.sh" "$install_root/discovery/scripts/common-services.sh" 0755

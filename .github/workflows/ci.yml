@@ -22,6 +22,14 @@ jobs:
           go-version: "1.23.x"
           cache: true
 
+      - name: Set up Node for Zabbix template checks
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate Zabbix template and preprocessing
+        run: node scripts/test-zabbix-template.js
+
       - name: Check formatting
         run: test -z "$(gofmt -l cmd internal)"
 

@@ -18,6 +18,7 @@ tar -xzf "$package" -C "$test_dir"
 sh "$test_dir/install.sh"
 [ "$(cat /opt/sma/installed-version)" = "$version" ]
 [ -r "/opt/sma/docs/releases/v$version.md" ]
+[ -r /opt/sma/docs/zabbix/template_sma_http_7.0.json ]
 /opt/sma/bin/sma-ctl doctor
 attempt=0
 until curl -fsS http://127.0.0.1:9108/readyz >/dev/null; do
