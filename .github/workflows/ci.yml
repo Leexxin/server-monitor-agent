@@ -50,3 +50,34 @@ jobs:
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ./...
           CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build ./...
           CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build ./...
+
+  deb-integration:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.x"
+          cache: true
+
+      - name: Install pinned package builder
+        env:
+          GOBIN: ${{ runner.temp }}/bin
+        run: |
+          mkdir -p "$GOBIN"
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.47.0
+          echo "$GOBIN" >> "$GITHUB_PATH"
+
+      - name: Build and stage 0.2.9 packages
+        run: |
+          sh scripts/build-packages.sh 0.2.9
+          sh scripts/prepare-share.sh 0.2.9
+
+      - name: Test renamed DEB lifecycle
+        run: sudo env SMA_RUN_INSTALL_TESTS=1 sh scripts/test-install-linux.sh dist/packages/server-monitor-agent_0.2.9_linux_amd64.deb
+
+      - name: Test legacy migration and unrelated sma isolation
+        run: sudo env SMA_RUN_INSTALL_TESTS=1 NFPM_BIN="$(command -v nfpm)" sh scripts/test-auto-installer-linux.sh dist/share-v0.2.9 0.2.9

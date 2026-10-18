@@ -15,6 +15,8 @@ sudo sh install-sma.sh --show-token
 
 脚本自动选发行版、架构和版本，校验下载文件，安装到 `/opt/sma`，配置鉴权并启动服务、启用自启。同版本重新运行也会补齐管理命令和 Token，不需要卸载。已有 Token 保留，避免客户端凭据失效。
 
+Ubuntu/Debian 的 v0.2.9 DEB 包名为 `server-monitor-agent`（旧版为 `sma`）。一键安装会先确认旧包确实拥有 `/opt/sma/bin/sma`，再迁移；不移除发行版中无关的同名软件。升级后用 `dpkg-query -W server-monitor-agent` 确认包身份，`sudo sma-ctl doctor` 检查服务。若旧安装已被替换，先从备份核对配置与 Token，避免在 sma-center 继续使用已失效的地址或凭据。
+
 全新安装生成 32 字节随机 Token（64 位十六进制文本），存于 `/opt/sma/config/token`，属主 `sma:sma`、权限 `0600`，并把 `--web.auth-token-file` 写入 `sma.env`。自定义 Token 路径会被保留；缺失的自定义文件需要管理员恢复。
 
 `--show-token` 在安装成功后把 Token 打印到标准输出，不写入安装器自己的日志，也不上传至共享目录。调用方如果录制终端或捕获 stdout，应当保护该记录。不加该选项时，安装结果显示查看 Token 的命令。

@@ -18,7 +18,8 @@ authorized() {
     curl -fsS -H "Authorization: Bearer $token" http://127.0.0.1:9108/v1/snapshot >/dev/null
 }
 dpkg -i "$package"
-for doc in README.md maintenance.md troubleshooting.md sma-center-version-metrics.md releases/v0.2.3.md releases/v0.2.4.md releases/v0.2.5.md releases/v0.2.6.md releases/v0.2.7.md releases/v0.2.8.md; do
+[ "$(dpkg-query -W -f='${db:Status-Status}' server-monitor-agent)" = installed ]
+for doc in README.md maintenance.md troubleshooting.md sma-center-version-metrics.md releases/v0.2.3.md releases/v0.2.4.md releases/v0.2.5.md releases/v0.2.6.md releases/v0.2.7.md releases/v0.2.8.md releases/v0.2.9.md; do
     [ -r "/opt/sma/docs/$doc" ] || { echo "Missing installed document: $doc" >&2; exit 1; }
 done
 ready
@@ -56,11 +57,13 @@ new_value=$("$ctl" token show)
 token=$new_value
 authorized
 "$ctl" uninstall --yes
+[ "$(dpkg-query -W -f='${db:Status-Status}' server-monitor-agent 2>/dev/null || true)" != installed ]
 [ -f /opt/sma/config/token ] && [ ! -e /opt/sma/bin/sma ]
 dpkg -i "$package"
 ready
 [ "$("$ctl" token show)" = "$token" ]
 authorized
 "$ctl" uninstall --purge --yes
+[ "$(dpkg-query -W -f='${db:Status-Status}' server-monitor-agent 2>/dev/null || true)" != installed ]
 [ ! -e /opt/sma ] && [ ! -L /usr/local/bin/sma-ctl ]
 printf 'PASS: native DEB install, authentication, reinstall, services, rollback, token rotation, uninstall and purge\n'

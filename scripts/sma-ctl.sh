@@ -266,7 +266,9 @@ uninstall() {
     fi
     service_action stop || { fail '停止失败，卸载已中止。'; return 1; }
     service_action disable || { fail '关闭开机自启失败，卸载已中止。'; return 1; }
-    if command -v dpkg-query >/dev/null 2>&1 && [ "$(dpkg-query -W -f='${db:Status-Status}' sma 2>/dev/null || true)" = installed ]; then
+    if command -v dpkg-query >/dev/null 2>&1 && [ "$(dpkg-query -W -f='${db:Status-Status}' server-monitor-agent 2>/dev/null || true)" = installed ]; then
+        if [ "$purge" -eq 1 ]; then dpkg --purge server-monitor-agent; else dpkg --remove server-monitor-agent; fi
+    elif command -v dpkg-query >/dev/null 2>&1 && [ "$(dpkg-query -W -f='${db:Status-Status}' sma 2>/dev/null || true)" = installed ] && dpkg-query -L sma 2>/dev/null | grep -Fxq /opt/sma/bin/sma; then
         if [ "$purge" -eq 1 ]; then dpkg --purge sma; else dpkg --remove sma; fi
     elif command -v rpm >/dev/null 2>&1 && rpm -q sma >/dev/null 2>&1; then
         rpm -e sma

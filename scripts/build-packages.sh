@@ -49,12 +49,18 @@ build_arch() {
     install -m 0755 "$binary" "$stage_dir/package/sma"
     printf '%s\n' "$version" > "$stage_dir/package/installed-version"
 
-    NFPM_ARCH="$package_arch" NFPM_VERSION="$version" NFPM_RELEASE="$package_release" SOURCE_DATE_EPOCH="$source_epoch" \
+    NFPM_NAME=server-monitor-agent NFPM_ARCH="$package_arch" NFPM_VERSION="$version" NFPM_RELEASE="$package_release" SOURCE_DATE_EPOCH="$source_epoch" \
         "$nfpm_bin" package --config packaging/nfpm.yaml --packager deb \
-        --target "$release_dir/sma_${version}_linux_${package_arch}.deb"
+        --target "$release_dir/server-monitor-agent_${version}_linux_${package_arch}.deb"
 
     if command -v ar >/dev/null 2>&1 && command -v tar >/dev/null 2>&1; then
-        deb_listing=$(ar p "$release_dir/sma_${version}_linux_${package_arch}.deb" data.tar.gz | tar -tzf -)
+        deb_package="$release_dir/server-monitor-agent_${version}_linux_${package_arch}.deb"
+        deb_listing=$(ar p "$deb_package" data.tar.gz | tar -tzf -)
+        deb_control=$(ar p "$deb_package" control.tar.gz | tar -xzOf - ./control)
+        printf '%s\n' "$deb_control" | grep -Fxq 'Package: server-monitor-agent' || {
+            echo "ERROR: DEB package identity must be server-monitor-agent" >&2
+            exit 1
+        }
         case "$deb_listing" in
             *etc/init.d/sma*)
                 echo "ERROR: DEB package must not contain /etc/init.d/sma" >&2
@@ -70,10 +76,10 @@ build_arch() {
         esac
     fi
 
-    NFPM_ARCH="$package_arch" NFPM_VERSION="$version" NFPM_RELEASE="$package_release" SOURCE_DATE_EPOCH="$source_epoch" \
+    NFPM_NAME=sma NFPM_ARCH="$package_arch" NFPM_VERSION="$version" NFPM_RELEASE="$package_release" SOURCE_DATE_EPOCH="$source_epoch" \
         "$nfpm_bin" package --config packaging/nfpm.yaml --packager rpm \
         --target "$release_dir/sma-${version}-${package_release}.${universal_arch}.rpm"
-    NFPM_ARCH="$package_arch" NFPM_VERSION="$version" NFPM_RELEASE="$package_release" SOURCE_DATE_EPOCH="$source_epoch" \
+    NFPM_NAME=sma NFPM_ARCH="$package_arch" NFPM_VERSION="$version" NFPM_RELEASE="$package_release" SOURCE_DATE_EPOCH="$source_epoch" \
         "$nfpm_bin" package --config packaging/nfpm.yaml --packager apk \
         --target "$release_dir/sma_${version}_${universal_arch}.apk"
 
