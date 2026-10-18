@@ -27,6 +27,17 @@
 
 管理页面的“运行中”可能是资源状态标记，不能代替 Agent 连通性、采集时间和鉴权结果。
 
+## Ubuntu 更新后代理被同名软件替换
+
+Ubuntu/Debian 的旧版监控代理 DEB 包名为 `sma`，与发行版中的无关软件重名。先检查包身份，不要直接卸载或 hold 所有名为 `sma` 的包：
+
+```sh
+dpkg-query -W -f='${binary:Package} ${Version} ${Status}\n' sma server-monitor-agent 2>/dev/null || true
+dpkg -S /opt/sma/bin/sma 2>/dev/null || true
+```
+
+v0.2.9 起使用 `server-monitor-agent` 包名。按[一键安装](automatic-installation.md)重新安装后，运行 `sudo sma-ctl doctor` 并检查监听地址。脚本仅移除拥有 `/opt/sma/bin/sma` 的旧监控代理包，不卸载无关的 `sma` 软件。原配置和 Token 存在时会保留；如果已丢失，请从备份恢复并更新 sma-center 中的连接信息。
+
 ## 在 Agent 主机检查
 
 ```sh

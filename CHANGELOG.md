@@ -1,5 +1,11 @@
 # 变更记录
 
+## v0.2.9
+
+- Ubuntu/Debian DEB 包更名为 `server-monitor-agent`，避免发行版仓库的同名 `sma` 包通过更新替换监控代理。
+- 一键安装仅迁移经 `/opt/sma/bin/sma` 文件归属验证的旧 `sma` 包；卸载命令也只卸载正确包，不会误删发行版的同名软件。
+- 运行路径、服务名、指标接口和已有配置/Token 不变；RPM、APK 与通用包名称保持不变。
+
 ## v0.2.8
 
 - 主机 JSON 快照和自动发现主动上报新增顶层 `agentVersion`，方便 sma-center 与接收系统直接记录 SMA 程序版本。

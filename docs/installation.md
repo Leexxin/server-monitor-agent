@@ -14,7 +14,7 @@ SMA 的程序和配置统一位于 `/opt/sma`。安装和卸载必须使用 root
 
 | Linux 系统 | x86-64 | ARM64 |
 |---|---|---|
-| Debian、Ubuntu | `sma_*_linux_amd64.deb` | `sma_*_linux_arm64.deb` |
+| Debian、Ubuntu | `server-monitor-agent_*_linux_amd64.deb` | `server-monitor-agent_*_linux_arm64.deb` |
 | RHEL、CentOS、Rocky、AlmaLinux、Fedora、SUSE | `sma-*-1.x86_64.rpm` | `sma-*-1.aarch64.rpm` |
 | Alpine Linux | `sma_*_x86_64.apk` | `sma_*_aarch64.apk` |
 | iStoreOS/OpenWrt（procd） | `sma_*_linux_x86_64.tar.gz` | `sma_*_linux_aarch64.tar.gz` |
@@ -29,13 +29,13 @@ sha256sum -c checksums.txt
 ## DEB
 
 ```bash
-sudo apt install ./sma_0.2.3_linux_amd64.deb
+sudo apt install ./server-monitor-agent_0.2.9_linux_amd64.deb
 ```
 
 卸载并保留配置：
 
 ```bash
-sudo apt remove sma
+sudo apt remove server-monitor-agent
 ```
 
 通过 SMA 工具卸载并清除 `/opt/sma`（含自动生成的 Token）：
@@ -43,6 +43,8 @@ sudo apt remove sma
 ```bash
 sudo sma-ctl uninstall --purge
 ```
+
+从 v0.2.9 起，DEB 包名从 `sma` 改为 `server-monitor-agent`，避免与 Ubuntu 仓库中的同名但无关的软件发生升级冲突。程序路径、`sma.service`、接口与已有 Token 不变。旧版监控代理请使用[一键安装脚本](automatic-installation.md)升级；脚本只在确认旧 `sma` 包拥有 `/opt/sma/bin/sma` 时才移除它。**不要对 Ubuntu 仓库的其他 `sma` 软件执行 `apt remove sma`。**直接执行 `apt install ./server-monitor-agent_...deb` 不负责旧包迁移，可能因文件归属冲突而失败。
 
 ## RPM
 

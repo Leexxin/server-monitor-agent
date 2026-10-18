@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://nfpm.goreleaser.com/schema.json
-name: sma
+name: ${NFPM_NAME}
 arch: ${NFPM_ARCH}
 platform: linux
 version: ${NFPM_VERSION}
@@ -14,6 +14,12 @@ license: Proprietary
 umask: 0o022
 
 contents:
+  - src: docs/releases/v0.2.9.md
+    dst: /opt/sma/docs/releases/v0.2.9.md
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
   - src: docs/releases/v0.2.8.md
     dst: /opt/sma/docs/releases/v0.2.8.md
     file_info:

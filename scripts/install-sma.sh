@@ -166,7 +166,7 @@ version_url=$(printf '%s' "$version" | sed 's/+/%2B/g')
 
 download checksums.txt "$work_dir/checksums.txt"
 case "$package_kind" in
-    deb) pattern="^sma_${version}_linux_${go_arch}\\.deb$" ;;
+    deb) pattern="^server-monitor-agent_${version}_linux_${go_arch}\\.deb$" ;;
     rpm) pattern="^sma-${version}-[0-9]+\\.${package_arch}\\.rpm$" ;;
     apk) pattern="^sma_${version}_${package_arch}\\.apk$" ;;
     tar) pattern="^sma_${version}_linux_${package_arch}\\.tar\\.gz$" ;;
@@ -181,7 +181,7 @@ printf '%s\n' "$expected" | grep -Eq '^[0-9a-fA-F]{64}$' \
 
 installed=
 case "$package_kind" in
-    deb) installed=$(dpkg-query -W -f='${Version}' sma 2>/dev/null || true) ;;
+    deb) installed=$(dpkg-query -W -f='${Version}' server-monitor-agent 2>/dev/null || true) ;;
     rpm) installed=$(rpm -q --qf '%{VERSION}' sma 2>/dev/null || true) ;;
     apk) installed=$(apk info -v sma 2>/dev/null | sed -n 's/^sma-\([0-9][^-]*\)-r[0-9]*$/\1/p' | head -n 1) ;;
     tar) [ ! -r /opt/sma/installed-version ] || installed=$(tr -d '\r\n' < /opt/sma/installed-version) ;;
@@ -196,6 +196,15 @@ if [ "$package_kind" = tar ] && [ "$same_version" -eq 1 ]; then
         same_version=0
     fi
 fi
+if [ "$package_kind" = deb ] && [ "$same_version" -eq 1 ] && [ ! -x /opt/sma/bin/sma ]; then
+    log 'The installed DEB is missing the SMA binary; reinstalling the target version.'
+    same_version=0
+fi
+
+legacy_deb_installed() {
+    [ "$(dpkg-query -W -f='${db:Status-Status}' sma 2>/dev/null || true)" = installed ] || return 1
+    dpkg-query -L sma 2>/dev/null | grep -Fxq /opt/sma/bin/sma
+}
 
 log "Detected: OS=${os_id:-unknown} arch=$machine package=$package_kind service=$service_manager installed=${installed:-none} target=$version"
 if [ "$same_version" -eq 1 ] && [ "$FORCE" -eq 0 ]; then
@@ -207,7 +216,13 @@ else
     [ "$actual" = "$expected" ] || fatal "SHA-256 mismatch for $filename (expected $expected, got $actual)."
     log "SHA-256 verified: $filename"
     case "$package_kind" in
-        deb) run_logged dpkg -i "$work_dir/$filename" ;;
+        deb)
+            if legacy_deb_installed; then
+                log 'Migrating verified legacy SMA Agent package from the conflicting Debian name sma.'
+                run_logged dpkg --remove sma
+            fi
+            run_logged dpkg --force-confold -i "$work_dir/$filename"
+            ;;
         rpm) run_logged rpm -Uvh --replacepkgs "$work_dir/$filename" ;;
         apk) run_logged apk add --allow-untrusted "$work_dir/$filename" ;;
         tar)
