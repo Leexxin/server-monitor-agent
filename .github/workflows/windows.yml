@@ -51,13 +51,13 @@ jobs:
           ./packaging/windows/test-windows.ps1 -Lifecycle -MsiPath (Resolve-Path dist/windows/*.msi).Path -PreviousMsiPath $oldMsi
       - name: Upload GUI rendering evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sma-gui-verification
           path: dist/gui-verification
           if-no-files-found: ignore
       - name: Upload Windows packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sma-windows-amd64
           path: |
@@ -67,7 +67,7 @@ jobs:
           if-no-files-found: error
       - name: Collect diagnostic logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-diagnostic-logs
           path: |
